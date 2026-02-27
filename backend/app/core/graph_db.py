@@ -113,6 +113,55 @@ def ingest_invoice_with_relations(tx, invoice: dict, return_type: str, return_pe
         )
 
 
+def ingest_gstr3b(tx, data: dict, return_period: str):
+    tx.run(
+        """
+        MERGE (r:GSTR3BReturn {gstin: $gstin, return_period: $return_period})
+        SET r.itc_claimed = $itc_claimed,
+            r.itc_available = $itc_available,
+            r.output_tax = $output_tax,
+            r.tax_paid = $tax_paid
+
+        MERGE (t:Taxpayer {gstin: $gstin})
+        MERGE (t)-[:FILED]->(r)
+        """,
+        gstin=data["gstin"],
+        return_period=return_period,
+        itc_claimed=data.get("total_itc_claimed", data.get("itc_claimed", 0)),
+        itc_available=data.get("itc_available_as_per_gstr2b", data.get("itc_available", 0)),
+        output_tax=data.get("output_tax_liability", data.get("output_tax", 0)),
+        tax_paid=data.get("tax_paid", 0),
+    )
+
+
+def ingest_gstr1_return(tx, gstin: str, return_period: str, filing_date: str = None):
+    tx.run(
+        """
+        MERGE (r:GSTR1Return {gstin: $gstin, return_period: $return_period})
+        SET r.filing_date = $filing_date
+        MERGE (t:Taxpayer {gstin: $gstin})
+        MERGE (t)-[:FILED]->(r)
+        """,
+        gstin=gstin,
+        return_period=return_period,
+        filing_date=filing_date,
+    )
+
+
+def ingest_gstr2b_return(tx, gstin: str, return_period: str, generation_date: str = None):
+    tx.run(
+        """
+        MERGE (r:GSTR2BReturn {gstin: $gstin, return_period: $return_period})
+        SET r.generation_date = $generation_date
+        MERGE (t:Taxpayer {gstin: $gstin})
+        MERGE (t)-[:RECEIVED]->(r)
+        """,
+        gstin=gstin,
+        return_period=return_period,
+        generation_date=generation_date,
+    )
+
+
 def get_graph_data(limit: int = 200):
     driver = get_driver()
     with driver.session() as session:

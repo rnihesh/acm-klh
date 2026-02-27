@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>GST Reconciliation Audit Report</title>
+    <style>
+        @page { size: A4; margin: 2cm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #1a1a1a; line-height: 1.5; }
+        .header { text-align: center; border-bottom: 3px solid #1e3a5f; padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { color: #1e3a5f; font-size: 22px; margin: 0; }
+        .header p { color: #666; margin: 5px 0 0; font-size: 12px; }
+        .meta-box { background: #f0f4f8; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .meta-item { text-align: center; }
+        .meta-item .label { font-size: 9px; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
+        .meta-item .value { font-size: 18px; font-weight: bold; color: #1e3a5f; }
+        .section-title { color: #1e3a5f; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-top: 25px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; }
+        th { background: #1e3a5f; color: white; padding: 8px 6px; text-align: left; font-weight: 600; }
+        td { padding: 6px; border-bottom: 1px solid #e5e5e5; }
+        tr:nth-child(even) { background: #f9fafb; }
+        .severity-critical { color: #dc2626; font-weight: bold; }
+        .severity-high { color: #ea580c; font-weight: bold; }
+        .severity-medium { color: #d97706; }
+        .severity-low { color: #16a34a; }
+        .summary-box { background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px; margin: 15px 0; border-radius: 0 6px 6px 0; }
+        .summary-box.info { background: #eff6ff; border-left-color: #2563eb; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 10px; border-top: 1px solid #ddd; color: #999; font-size: 9px; }
+        .amount { font-family: 'Courier New', monospace; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>GST Reconciliation Audit Report</h1>
+        <p>Return Period: {{ return_period }} | Generated: {{ generated_at }}</p>
+    </div>
+
+    <table style="margin-bottom: 20px;">
+        <tr>
+            <td style="text-align: center; border: none; width: 25%;">
+                <div class="meta-item">
+                    <div class="label">Total Mismatches</div>
+                    <div class="value">{{ total_mismatches }}</div>
+                </div>
+            </td>
+            <td style="text-align: center; border: none; width: 25%;">
+                <div class="meta-item">
+                    <div class="label">ITC at Risk</div>
+                    <div class="value">₹{{ total_itc_at_risk }}</div>
+                </div>
+            </td>
+            <td style="text-align: center; border: none; width: 25%;">
+                <div class="meta-item">
+                    <div class="label">Critical Issues</div>
+                    <div class="value" style="color: #dc2626;">{{ critical_count }}</div>
+                </div>
+            </td>
+            <td style="text-align: center; border: none; width: 25%;">
+                <div class="meta-item">
+                    <div class="label">High Risk Vendors</div>
+                    <div class="value" style="color: #ea580c;">{{ high_risk_vendors }}</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <h2 class="section-title">Mismatch Breakdown</h2>
+    <table>
+        <tr>
+            <th>Mismatch Type</th>
+            <th>Count</th>
+            <th>Total Amount at Risk</th>
+        </tr>
+        {% for item in breakdown %}
+        <tr>
+            <td>{{ item.type }}</td>
+            <td>{{ item.count }}</td>
+            <td class="amount">₹{{ "%.2f"|format(item.amount) }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2 class="section-title">Detailed Mismatches</h2>
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Invoice</th>
+            <th>Supplier GSTIN</th>
+            <th>Buyer GSTIN</th>
+            <th>Amount Diff</th>
+            <th>Description</th>
+        </tr>
+        {% for m in mismatches %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ m.mismatch_type }}</td>
+            <td class="severity-{{ m.severity|lower }}">{{ m.severity }}</td>
+            <td>{{ m.invoice_number }}</td>
+            <td style="font-size: 8px;">{{ m.supplier_gstin }}</td>
+            <td style="font-size: 8px;">{{ m.buyer_gstin }}</td>
+            <td class="amount">₹{{ "%.2f"|format(m.amount_difference) }}</td>
+            <td style="font-size: 9px;">{{ m.description[:120] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% if audit_trails %}
+    <h2 class="section-title">AI-Generated Audit Trails</h2>
+    {% for trail in audit_trails %}
+    <div class="summary-box info">
+        <strong>Mismatch ID:</strong> {{ trail.mismatch_id }}<br>
+        <strong>Explanation:</strong> {{ trail.explanation[:500] }}<br>
+        <strong>Recommendation:</strong> {{ trail.recommendation }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if risky_vendors %}
+    <h2 class="section-title">High-Risk Vendors</h2>
+    <table>
+        <tr>
+            <th>GSTIN</th>
+            <th>Name</th>
+            <th>Risk Score</th>
+            <th>Risk Level</th>
+            <th>Filing Rate</th>
+            <th>Mismatches</th>
+            <th>Circular Trade</th>
+        </tr>
+        {% for v in risky_vendors %}
+        <tr>
+            <td style="font-size: 9px;">{{ v.gstin }}</td>
+            <td>{{ v.legal_name }}</td>
+            <td>{{ v.risk_score }}</td>
+            <td class="severity-{{ v.risk_level|lower }}">{{ v.risk_level }}</td>
+            <td>{{ v.filing_rate }}%</td>
+            <td>{{ v.mismatch_count }}</td>
+            <td>{{ "Yes" if v.circular_trade_flag else "No" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <div class="footer">
+        <p>This report was auto-generated by the GST Reconciliation Engine. For queries, contact your tax compliance team.</p>
+        <p>Confidential — Do not distribute without authorization.</p>
+    </div>
+</body>
+</html>

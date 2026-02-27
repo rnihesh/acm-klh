@@ -6,6 +6,7 @@ from app.models.gst import MismatchResult, MismatchType, Severity
 def reconcile_all(return_period: str) -> list[dict]:
     mismatches = []
     mismatches.extend(reconcile_gstr1_vs_gstr2b(return_period))
+    mismatches.extend(reconcile_gstr2b_vs_gstr1(return_period))
     mismatches.extend(find_excess_itc(return_period))
     mismatches.extend(find_duplicate_invoices(return_period))
     return mismatches
@@ -121,6 +122,45 @@ def reconcile_gstr1_vs_gstr2b(return_period: str) -> list[dict]:
     return mismatches
 
 
+def reconcile_gstr2b_vs_gstr1(return_period: str) -> list[dict]:
+    """Find invoices in GSTR-2B that are missing from GSTR-1 (potential fake ITC claims)."""
+    driver = get_driver()
+    mismatches = []
+
+    with driver.session() as session:
+        result = session.run(
+            """
+            MATCH (g2b:GSTR2BReturn {return_period: $period})-[:CONTAINS_INWARD]->(inv2:Invoice)
+            WHERE NOT EXISTS {
+                MATCH (g1:GSTR1Return {return_period: $period})-[:CONTAINS_OUTWARD]->(inv1:Invoice)
+                WHERE inv1.invoice_number = inv2.invoice_number
+                  AND inv1.supplier_gstin = inv2.supplier_gstin
+                  AND inv1.buyer_gstin = inv2.buyer_gstin
+            }
+            RETURN inv2
+            """,
+            period=return_period,
+        )
+        for record in result:
+            inv = dict(record["inv2"])
+            mismatches.append({
+                "id": str(uuid.uuid4()),
+                "mismatch_type": MismatchType.MISSING_IN_GSTR1.value,
+                "severity": _severity_for_amount(inv.get("total_value", 0)),
+                "supplier_gstin": inv.get("supplier_gstin", ""),
+                "buyer_gstin": inv.get("buyer_gstin", ""),
+                "invoice_number": inv.get("invoice_number", ""),
+                "return_period": return_period,
+                "field_name": None,
+                "expected_value": "PRESENT IN GSTR-1",
+                "actual_value": "NOT FOUND",
+                "amount_difference": inv.get("total_value", 0),
+                "description": f"Invoice {inv.get('invoice_number')} appears in buyer's GSTR-2B but supplier has not filed it in GSTR-1. Possible fake ITC claim of INR {inv.get('total_value', 0)}.",
+            })
+
+    return mismatches
+
+
 def find_excess_itc(return_period: str) -> list[dict]:
     driver = get_driver()
     mismatches = []
@@ -130,8 +170,10 @@ def find_excess_itc(return_period: str) -> list[dict]:
             """
             MATCH (g3b:GSTR3BReturn {return_period: $period})
             OPTIONAL MATCH (g2b:GSTR2BReturn {gstin: g3b.gstin, return_period: $period})-[:CONTAINS_INWARD]->(inv:Invoice)
-            WITH g3b, SUM(inv.cgst + inv.sgst + inv.igst) AS available_itc
-            WHERE g3b.itc_claimed > available_itc * 1.0
+            WITH g3b, COALESCE(SUM(inv.cgst + inv.sgst + inv.igst), 0) AS computed_itc
+            WITH g3b, computed_itc,
+                 CASE WHEN computed_itc > 0 THEN computed_itc ELSE g3b.itc_available END AS available_itc
+            WHERE g3b.itc_claimed > available_itc
             RETURN g3b.gstin AS gstin, g3b.itc_claimed AS claimed, available_itc
             """,
             period=return_period,
@@ -197,3 +239,101 @@ def _severity_for_amount(amount: float) -> str:
     elif amount >= 10000:
         return Severity.MEDIUM.value
     return Severity.LOW.value
+
+
+def reconcile_purchase_register(gstin: str, purchase_records: list[dict], return_period: str) -> list[dict]:
+    """
+    Match purchase register entries against GSTR-2B.
+    - In books but not in GSTR-2B → can't claim ITC
+    - In GSTR-2B but not in books → missing from accounting
+    """
+    driver = get_driver()
+    mismatches = []
+
+    with driver.session() as session:
+        # Get all GSTR-2B invoices for this buyer
+        result = session.run(
+            """
+            MATCH (g2b:GSTR2BReturn {gstin: $gstin, return_period: $period})-[:CONTAINS_INWARD]->(inv:Invoice)
+            RETURN inv.invoice_number AS invoice_number,
+                   inv.supplier_gstin AS supplier_gstin,
+                   inv.taxable_value AS taxable_value,
+                   inv.total_value AS total_value,
+                   inv.gst_rate AS gst_rate,
+                   inv.cgst AS cgst,
+                   inv.sgst AS sgst,
+                   inv.igst AS igst
+            """,
+            gstin=gstin,
+            period=return_period,
+        )
+        gstr2b_invoices = {
+            f"{r['supplier_gstin']}_{r['invoice_number']}": dict(r)
+            for r in result
+        }
+
+    # Build purchase register lookup
+    pr_invoices = {
+        f"{rec.get('supplier_gstin', '')}_{rec.get('invoice_number', '')}": rec
+        for rec in purchase_records
+    }
+
+    # In purchase register but not in GSTR-2B
+    for key, rec in pr_invoices.items():
+        if key not in gstr2b_invoices:
+            mismatches.append({
+                "id": str(uuid.uuid4()),
+                "mismatch_type": MismatchType.MISSING_IN_GSTR2B.value,
+                "severity": _severity_for_amount(rec.get("total_value", 0)),
+                "supplier_gstin": rec.get("supplier_gstin", ""),
+                "buyer_gstin": gstin,
+                "invoice_number": rec.get("invoice_number", ""),
+                "return_period": return_period,
+                "field_name": None,
+                "expected_value": "PRESENT IN GSTR-2B",
+                "actual_value": "NOT FOUND",
+                "amount_difference": rec.get("total_value", 0),
+                "description": f"Invoice {rec.get('invoice_number')} from purchase register not found in GSTR-2B. ITC of INR {rec.get('total_value', 0)} cannot be claimed.",
+            })
+
+    # In GSTR-2B but not in purchase register
+    for key, inv in gstr2b_invoices.items():
+        if key not in pr_invoices:
+            mismatches.append({
+                "id": str(uuid.uuid4()),
+                "mismatch_type": MismatchType.MISSING_IN_GSTR1.value,
+                "severity": Severity.MEDIUM.value,
+                "supplier_gstin": inv.get("supplier_gstin", ""),
+                "buyer_gstin": gstin,
+                "invoice_number": inv.get("invoice_number", ""),
+                "return_period": return_period,
+                "field_name": None,
+                "expected_value": "PRESENT IN PURCHASE REGISTER",
+                "actual_value": "NOT FOUND",
+                "amount_difference": inv.get("total_value", 0),
+                "description": f"Invoice {inv.get('invoice_number')} found in GSTR-2B but missing from purchase register. Update books to claim ITC.",
+            })
+        else:
+            # Both exist — compare values
+            pr_rec = pr_invoices[key]
+            for field in ["taxable_value", "cgst", "sgst", "igst"]:
+                val_2b = inv.get(field, 0) or 0
+                val_pr = float(pr_rec.get(field, 0) or 0)
+                if abs(val_2b - val_pr) > 0.01:
+                    diff = abs(val_2b - val_pr)
+                    mismatches.append({
+                        "id": str(uuid.uuid4()),
+                        "mismatch_type": MismatchType.VALUE_MISMATCH.value,
+                        "severity": _severity_for_amount(diff),
+                        "supplier_gstin": inv.get("supplier_gstin", ""),
+                        "buyer_gstin": gstin,
+                        "invoice_number": inv.get("invoice_number", ""),
+                        "return_period": return_period,
+                        "field_name": field,
+                        "expected_value": str(val_2b),
+                        "actual_value": str(val_pr),
+                        "amount_difference": diff,
+                        "description": f"Purchase register vs GSTR-2B mismatch in {field}: Books show INR {val_pr} but GSTR-2B shows INR {val_2b}.",
+                    })
+
+    return mismatches

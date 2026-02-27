@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response, HTMLResponse
 from app.core.llm_chain import generate_audit_explanation
+from app.core.report_generator import generate_reconciliation_report, generate_html_report
 
 router = APIRouter()
 
@@ -10,7 +12,13 @@ _audit_store: list[dict] = []
 
 @router.post("/generate")
 async def generate_audit_trail(mismatch: dict):
-    explanation = await generate_audit_explanation(mismatch)
+    if not mismatch.get("mismatch_type"):
+        raise HTTPException(status_code=400, detail="mismatch_type is required")
+
+    try:
+        explanation = await generate_audit_explanation(mismatch)
+    except Exception as e:
+        explanation = f"Unable to generate AI explanation: {str(e)}"
 
     trail = {
         "id": str(uuid.uuid4()),
@@ -54,7 +62,67 @@ async def get_audit_trail(trail_id: str):
     for trail in _audit_store:
         if trail["id"] == trail_id:
             return trail
-    return {"error": "Not found"}
+    raise HTTPException(status_code=404, detail=f"Audit trail {trail_id} not found")
+
+
+@router.get("/report/pdf")
+async def download_pdf_report(return_period: str = "012026"):
+    """Generate and download a PDF audit report for the given return period."""
+    from app.api.reconcile import _results_store
+    from app.core.risk_model import calculate_all_vendor_risks
+
+    mismatches = _results_store.get(return_period, [])
+    if not mismatches:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No reconciliation results for period {return_period}. Run reconciliation first.",
+        )
+
+    try:
+        vendors = calculate_all_vendor_risks()
+    except Exception:
+        vendors = []
+
+    pdf_bytes = generate_reconciliation_report(
+        return_period=return_period,
+        mismatches=mismatches,
+        audit_trails=_audit_store,
+        risky_vendors=vendors,
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=GST_Audit_Report_{return_period}.pdf"},
+    )
+
+
+@router.get("/report/html")
+async def view_html_report(return_period: str = "012026"):
+    """Generate and view an HTML audit report for the given return period."""
+    from app.api.reconcile import _results_store
+    from app.core.risk_model import calculate_all_vendor_risks
+
+    mismatches = _results_store.get(return_period, [])
+    if not mismatches:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No reconciliation results for period {return_period}. Run reconciliation first.",
+        )
+
+    try:
+        vendors = calculate_all_vendor_risks()
+    except Exception:
+        vendors = []
+
+    html = generate_html_report(
+        return_period=return_period,
+        mismatches=mismatches,
+        audit_trails=_audit_store,
+        risky_vendors=vendors,
+    )
+
+    return HTMLResponse(content=html)
 
 
 def _get_recommendation(mismatch_type: str) -> str:
