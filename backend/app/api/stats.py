@@ -28,7 +28,7 @@ async def get_dashboard_stats():
     # Aggregate mismatches from in-memory reconciliation results
     all_mismatches = []
     for period_results in _results_store.values():
-        all_mismatches.extend(period_results)
+        all_mismatches.extend(period_results.get("results", []))
 
     total_mismatches = len(all_mismatches)
 
@@ -71,7 +71,7 @@ async def get_mismatch_summary():
     """Mismatch summary from reconciliation results."""
     all_mismatches = []
     for period_results in _results_store.values():
-        all_mismatches.extend(period_results)
+        all_mismatches.extend(period_results.get("results", []))
 
     breakdown = {}
     for m in all_mismatches:
@@ -96,3 +96,88 @@ async def get_top_risky_vendors():
     except Exception:
         top = []
     return {"top_risky_vendors": top}
+
+
+@router.get("/itc-flow")
+async def get_itc_flow():
+    driver = get_driver()
+    with driver.session() as session:
+        # ITC claimed from GSTR3B
+        claimed = session.run(
+            "MATCH (r:GSTR3BReturn) RETURN coalesce(sum(r.itc_claimed), 0) AS total"
+        ).single()["total"]
+
+        # ITC eligible from GSTR2B invoices
+        eligible = session.run(
+            "MATCH (r:GSTR2BReturn)-[:CONTAINS_INWARD]->(inv:Invoice) "
+            "RETURN coalesce(sum(inv.cgst + inv.sgst + inv.igst), 0) AS total"
+        ).single()["total"]
+
+        at_risk = max(0, round(claimed - eligible, 2))
+        matched = round(min(claimed, eligible), 2)
+
+    return {
+        "nodes": [
+            {"id": "claimed", "label": "ITC Claimed (GSTR-3B)"},
+            {"id": "eligible", "label": "ITC Eligible (GSTR-2B)"},
+            {"id": "matched", "label": "ITC Matched"},
+            {"id": "at_risk", "label": "ITC At Risk"},
+        ],
+        "links": [
+            {"source": "claimed", "target": "matched", "value": round(matched, 2)},
+            {"source": "claimed", "target": "at_risk", "value": round(at_risk, 2)},
+            {"source": "eligible", "target": "matched", "value": round(matched, 2)},
+        ],
+        "summary": {
+            "total_claimed": round(claimed, 2),
+            "total_eligible": round(eligible, 2),
+            "total_at_risk": round(at_risk, 2),
+            "total_matched": round(matched, 2),
+        }
+    }
+
+
+@router.get("/trends")
+async def get_trends():
+    driver = get_driver()
+    with driver.session() as session:
+        result = session.run(
+            """
+            MATCH (inv:Invoice)
+            WITH inv.return_period AS period, COUNT(inv) AS invoice_count
+            OPTIONAL MATCH (t:Taxpayer)
+            WITH period, invoice_count, COUNT(DISTINCT t) AS taxpayer_count
+            RETURN period, invoice_count, taxpayer_count
+            ORDER BY period
+            """
+        )
+        period_data = {}
+        for r in result:
+            p = r["period"]
+            if p:
+                period_data[p] = {
+                    "period": p,
+                    "invoices": r["invoice_count"],
+                    "taxpayers": r["taxpayer_count"],
+                    "mismatches": 0,
+                    "itc_at_risk": 0.0,
+                }
+
+    # Add mismatch data from in-memory store
+    for period, stored in _results_store.items():
+        results = stored.get("results", [])
+        if period in period_data:
+            period_data[period]["mismatches"] = len(results)
+            period_data[period]["itc_at_risk"] = round(
+                sum(m.get("amount_difference", 0) for m in results), 2
+            )
+        else:
+            period_data[period] = {
+                "period": period,
+                "invoices": 0,
+                "taxpayers": 0,
+                "mismatches": len(results),
+                "itc_at_risk": round(sum(m.get("amount_difference", 0) for m in results), 2),
+            }
+
+    return {"periods": sorted(period_data.values(), key=lambda x: x["period"])}

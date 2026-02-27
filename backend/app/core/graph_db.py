@@ -28,6 +28,9 @@ def create_constraints():
         constraints = [
             "CREATE CONSTRAINT taxpayer_gstin IF NOT EXISTS FOR (t:Taxpayer) REQUIRE t.gstin IS UNIQUE",
             "CREATE CONSTRAINT invoice_id IF NOT EXISTS FOR (i:Invoice) REQUIRE i.invoice_id IS UNIQUE",
+            "CREATE CONSTRAINT einvoice_irn IF NOT EXISTS FOR (e:EInvoice) REQUIRE e.irn IS UNIQUE",
+            "CREATE CONSTRAINT ewb_number IF NOT EXISTS FOR (e:EWayBill) REQUIRE e.ewb_number IS UNIQUE",
+            "CREATE CONSTRAINT pr_entry_id IF NOT EXISTS FOR (p:PurchaseRegisterEntry) REQUIRE p.entry_id IS UNIQUE",
             "CREATE INDEX taxpayer_name IF NOT EXISTS FOR (t:Taxpayer) ON (t.legal_name)",
             "CREATE INDEX invoice_number IF NOT EXISTS FOR (i:Invoice) ON (i.invoice_number)",
             "CREATE INDEX invoice_period IF NOT EXISTS FOR (i:Invoice) ON (i.return_period)",
@@ -162,6 +165,104 @@ def ingest_gstr2b_return(tx, gstin: str, return_period: str, generation_date: st
     )
 
 
+def ingest_einvoice(tx, data: dict):
+    tx.run(
+        """
+        MERGE (e:EInvoice {irn: $irn})
+        SET e.ack_number = $ack_number,
+            e.ack_date = $ack_date,
+            e.irn_status = $irn_status,
+            e.qr_code = $qr_code
+
+        WITH e
+        MATCH (inv:Invoice {invoice_id: $invoice_id})
+        MERGE (e)-[:GENERATES]->(inv)
+        """,
+        irn=data["irn"],
+        ack_number=data.get("ack_number", ""),
+        ack_date=data.get("ack_date", ""),
+        irn_status=data.get("irn_status", "Active"),
+        qr_code=data.get("qr_code", ""),
+        invoice_id=data.get("invoice_id", ""),
+    )
+
+
+def ingest_eway_bill(tx, data: dict):
+    tx.run(
+        """
+        MERGE (e:EWayBill {ewb_number: $ewb_number})
+        SET e.transport_mode = $transport_mode,
+            e.vehicle_number = $vehicle_number,
+            e.valid_from = $valid_from,
+            e.valid_until = $valid_until,
+            e.distance_km = $distance_km
+
+        WITH e
+        MATCH (inv:Invoice {invoice_id: $invoice_id})
+        MERGE (e)-[:COVERS]->(inv)
+
+        WITH e
+        MATCH (t:Taxpayer {gstin: $transporter_gstin})
+        MERGE (e)-[:TRANSPORTED_BY]->(t)
+        """,
+        ewb_number=data["ewb_number"],
+        transport_mode=data.get("transport_mode", "Road"),
+        vehicle_number=data.get("vehicle_number", ""),
+        valid_from=data.get("valid_from", ""),
+        valid_until=data.get("valid_until", ""),
+        distance_km=data.get("distance_km", 0),
+        invoice_id=data.get("invoice_id", ""),
+        transporter_gstin=data.get("transporter_gstin", ""),
+    )
+
+
+def ingest_purchase_register_entry(tx, data: dict):
+    tx.run(
+        """
+        MERGE (p:PurchaseRegisterEntry {entry_id: $entry_id})
+        SET p.buyer_gstin = $buyer_gstin,
+            p.supplier_gstin = $supplier_gstin,
+            p.invoice_number = $invoice_number,
+            p.invoice_date = $invoice_date,
+            p.taxable_value = $taxable_value,
+            p.cgst = $cgst,
+            p.sgst = $sgst,
+            p.igst = $igst,
+            p.total_value = $total_value,
+            p.booked_date = $booked_date
+
+        WITH p
+        MATCH (inv:Invoice)
+        WHERE inv.invoice_number = $invoice_number
+          AND inv.supplier_gstin = $supplier_gstin
+        MERGE (inv)-[:RECORDED_IN]->(p)
+        """,
+        entry_id=data["entry_id"],
+        buyer_gstin=data.get("buyer_gstin", ""),
+        supplier_gstin=data.get("supplier_gstin", ""),
+        invoice_number=data.get("invoice_number", ""),
+        invoice_date=data.get("invoice_date", ""),
+        taxable_value=data.get("taxable_value", 0),
+        cgst=data.get("cgst", 0),
+        sgst=data.get("sgst", 0),
+        igst=data.get("igst", 0),
+        total_value=data.get("total_value", 0),
+        booked_date=data.get("booked_date", ""),
+    )
+
+
+def create_itc_claims(tx, return_period: str):
+    tx.run(
+        """
+        MATCH (r:GSTR3BReturn {return_period: $period})
+        MATCH (inv:Invoice {return_period: $period})
+        WHERE inv.buyer_gstin = r.gstin
+        MERGE (r)-[:CLAIMS_ITC]->(inv)
+        """,
+        period=return_period,
+    )
+
+
 def _node_label(labels: list[str], props: dict) -> str:
     """Pick the best display label for a node."""
     if "Taxpayer" in labels:
@@ -174,6 +275,12 @@ def _node_label(labels: list[str], props: dict) -> str:
         return f"GSTR2B {props.get('gstin', '')[:8]}..{props.get('return_period', '')}"
     if "GSTR3BReturn" in labels:
         return f"GSTR3B {props.get('gstin', '')[:8]}..{props.get('return_period', '')}"
+    if "EInvoice" in labels:
+        return f"eInv {props.get('irn', '')[:12]}…"
+    if "EWayBill" in labels:
+        return f"EWB {props.get('ewb_number', '')}"
+    if "PurchaseRegisterEntry" in labels:
+        return f"PR {props.get('entry_id', '')}"
     return str(props.get("id", ""))
 
 

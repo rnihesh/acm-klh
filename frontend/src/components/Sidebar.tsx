@@ -15,6 +15,7 @@ import {
   LogOut,
   X,
   MessageSquare,
+  Plug,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/audit", label: "Audit Trails", icon: FileSearch },
   { href: "/risk", label: "Vendor Risk", icon: ShieldAlert },
   { href: "/chat", label: "AI Assistant", icon: MessageSquare },
+  { href: "/integrations", label: "Integrations", icon: Plug },
 ];
 
 interface SidebarProps {

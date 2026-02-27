@@ -168,3 +168,48 @@ export const downloadPDF = async (returnPeriod = "012026") => {
   a.click();
   URL.revokeObjectURL(url);
 };
+
+// ITC Flow (Sankey)
+export const getITCFlow = () => fetchAPI("/api/stats/itc-flow");
+
+// Trend Data
+export const getTrendData = () => fetchAPI("/api/stats/trends");
+
+// Vendor Scorecard
+export const getVendorScorecard = (gstin: string) =>
+  fetchAPI(`/api/risk/vendors/${gstin}/scorecard`);
+
+// GSTN Mock API
+export const fetchGSTN = (type: string, gstin: string, period: string) =>
+  fetchAPI(`/api/gstn/fetch-${type}`, {
+    method: "POST",
+    body: JSON.stringify({ gstin, return_period: period }),
+  });
+
+export const getGSTNStatus = () => fetchAPI("/api/gstn/status");
+
+// ERP Import
+export const importERP = (source: string, file: File, returnPeriod = "012026") => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return fetch(
+    `${API_BASE}/api/erp/import/${source}?return_period=${returnPeriod}`,
+    { method: "POST", body: formData, headers }
+  ).then((r) => r.json());
+};
+
+// Notifications
+export const getNotificationSettings = () =>
+  fetchAPI("/api/notifications/settings");
+
+export const configureNotifications = (settings: Record<string, unknown>) =>
+  fetchAPI("/api/notifications/configure", {
+    method: "POST",
+    body: JSON.stringify(settings),
+  });
+
+export const testNotification = () =>
+  fetchAPI("/api/notifications/test", { method: "POST" });

@@ -97,6 +97,8 @@ export default function UploadPage() {
                 <option value="GSTR2B">GSTR-2B (Auto-drafted ITC)</option>
                 <option value="GSTR3B">GSTR-3B (Summary Return)</option>
                 <option value="PURCHASE_REGISTER">Purchase Register</option>
+                <option value="EINVOICE">E-Invoice (IRN)</option>
+                <option value="EWAY_BILL">E-Way Bill</option>
               </select>
             </div>
             <div>

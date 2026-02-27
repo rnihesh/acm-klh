@@ -9,6 +9,8 @@ import {
   getMismatchSummary,
   getTopRiskyVendors,
   downloadPDF,
+  getITCFlow,
+  getTrendData,
 } from "@/lib/api";
 import { formatCurrency, formatNumber, severityColor } from "@/lib/utils";
 import {
@@ -33,7 +35,10 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
 } from "recharts";
+import ITCSankeyChart from "@/components/ITCSankeyChart";
 
 interface DashboardStats {
   total_taxpayers: number;
@@ -92,6 +97,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [itcFlow, setItcFlow] = useState<any>(null);
+  const [trendData, setTrendData] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +106,9 @@ export default function Dashboard() {
       getDashboardStats(),
       getMismatchSummary(),
       getTopRiskyVendors(),
-    ]).then(([statsRes, mismatchRes, vendorRes]) => {
+      getITCFlow(),
+      getTrendData(),
+    ]).then(([statsRes, mismatchRes, vendorRes, itcRes, trendRes]) => {
       if (statsRes.status === "fulfilled")
         setStats(statsRes.value as DashboardStats);
       if (mismatchRes.status === "fulfilled") {
@@ -109,6 +118,11 @@ export default function Dashboard() {
       if (vendorRes.status === "fulfilled") {
         const data = vendorRes.value as { top_risky_vendors: RiskyVendor[] };
         setRiskyVendors(data.top_risky_vendors || []);
+      }
+      if (itcRes.status === "fulfilled") setItcFlow(itcRes.value);
+      if (trendRes.status === "fulfilled") {
+        const data = trendRes.value as { periods: any[] };
+        setTrendData(data.periods || []);
       }
       setLoading(false);
     });
@@ -320,6 +334,47 @@ export default function Dashboard() {
               <EmptyState text="No vendor risk data. Run reconciliation first." />
             )}
           </div>
+
+          {/* ITC Flow Sankey */}
+          <div className="c-bg-card rounded-xl border c-border p-5 mt-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+            <h2 className="text-sm font-semibold c-text mb-4">ITC Flow Analysis</h2>
+            {itcFlow ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {[
+                    { label: "Total Claimed", value: formatCurrency(itcFlow.summary?.total_claimed || 0) },
+                    { label: "Total Eligible", value: formatCurrency(itcFlow.summary?.total_eligible || 0) },
+                    { label: "Matched", value: formatCurrency(itcFlow.summary?.total_matched || 0) },
+                    { label: "At Risk", value: formatCurrency(itcFlow.summary?.total_at_risk || 0) },
+                  ].map((item) => (
+                    <div key={item.label} className="c-bg-dark rounded-lg p-3 text-center">
+                      <p className="text-[10px] c-text-3">{item.label}</p>
+                      <p className="text-sm font-bold c-text mt-1">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <ITCSankeyChart nodes={itcFlow.nodes || []} links={itcFlow.links || []} />
+              </>
+            ) : (
+              <EmptyState text="No ITC flow data. Run reconciliation first." />
+            )}
+          </div>
+
+          {/* Trend Chart */}
+          {trendData.length > 0 && (
+            <div className="c-bg-card rounded-xl border c-border p-5 mt-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+              <h2 className="text-sm font-semibold c-text mb-4">Period-over-Period Trends</h2>
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={trendData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <XAxis dataKey="period" tick={{ fill: "var(--text-tertiary)", fontSize: 10 }} axisLine={{ stroke: "var(--bg-border)" }} tickLine={false} />
+                  <YAxis tick={{ fill: "var(--text-tertiary)", fontSize: 10 }} axisLine={{ stroke: "var(--bg-border)" }} tickLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--bg-border)", borderRadius: "8px", color: "var(--text-primary)", fontSize: 12, boxShadow: "var(--shadow-md)" }} />
+                  <Area type="monotone" dataKey="mismatches" stroke="#a3a3a3" fill="#a3a3a3" fillOpacity={0.2} name="Mismatches" />
+                  <Area type="monotone" dataKey="invoices" stroke="#e5e5e5" fill="#e5e5e5" fillOpacity={0.1} name="Invoices" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </>
       )}
     </PageShell>

@@ -9,6 +9,8 @@ from app.core.graph_db import (
     ingest_gstr3b,
     ingest_gstr1_return,
     ingest_gstr2b_return,
+    ingest_einvoice,
+    ingest_eway_bill,
 )
 
 router = APIRouter()
@@ -34,7 +36,7 @@ async def upload_data(
     return_type: str = "GSTR1",
     return_period: str = "012026",
 ):
-    if return_type not in ("GSTR1", "GSTR2B", "GSTR3B", "PURCHASE_REGISTER"):
+    if return_type not in ("GSTR1", "GSTR2B", "GSTR3B", "PURCHASE_REGISTER", "EINVOICE", "EWAY_BILL"):
         raise HTTPException(status_code=400, detail=f"Invalid return_type: {return_type}")
 
     content = await file.read()
@@ -53,6 +55,30 @@ async def upload_data(
                     if field in record and isinstance(record[field], str):
                         record[field] = float(record[field])
                 session.execute_write(ingest_gstr3b, record, return_period)
+                ingested += 1
+        return {
+            "status": "success",
+            "return_type": return_type,
+            "return_period": return_period,
+            "records_ingested": ingested,
+        }
+
+    if return_type == "EINVOICE":
+        with driver.session() as session:
+            for record in data:
+                session.execute_write(ingest_einvoice, record)
+                ingested += 1
+        return {
+            "status": "success",
+            "return_type": return_type,
+            "return_period": return_period,
+            "records_ingested": ingested,
+        }
+
+    if return_type == "EWAY_BILL":
+        with driver.session() as session:
+            for record in data:
+                session.execute_write(ingest_eway_bill, record)
                 ingested += 1
         return {
             "status": "success",

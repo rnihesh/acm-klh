@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Literal
 
 
 class MismatchType(str, Enum):
@@ -128,3 +128,45 @@ class DashboardStats(BaseModel):
     total_itc_at_risk: float
     mismatch_breakdown: dict[str, int]
     severity_breakdown: dict[str, int]
+
+
+class EInvoice(BaseModel):
+    irn: str = Field(..., description="Invoice Reference Number (64-char hash)")
+    invoice_id: Optional[str] = None
+    ack_number: str
+    ack_date: date
+    irn_status: str = "Active"
+    qr_code: Optional[str] = None
+
+
+class EWayBill(BaseModel):
+    ewb_number: str = Field(..., description="12-digit E-Way Bill number")
+    invoice_id: Optional[str] = None
+    transporter_gstin: str
+    transport_mode: str = "Road"
+    vehicle_number: Optional[str] = None
+    valid_from: date
+    valid_until: date
+    distance_km: float = 0.0
+
+
+class PurchaseRegisterEntry(BaseModel):
+    entry_id: str
+    buyer_gstin: str
+    supplier_gstin: str
+    invoice_number: str
+    invoice_date: date
+    taxable_value: float
+    cgst: float = 0.0
+    sgst: float = 0.0
+    igst: float = 0.0
+    total_value: float
+    booked_date: date
+
+
+class NotificationSettings(BaseModel):
+    channel: Literal["email", "webhook"] = "email"
+    enabled: bool = True
+    email_to: Optional[str] = None
+    webhook_url: Optional[str] = None
+    notify_on_critical: bool = True

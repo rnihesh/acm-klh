@@ -59,30 +59,39 @@ interface CircularTrade {
 
 /* ── Color Palette ── */
 const NODE_COLORS: Record<string, string> = {
-  Taxpayer: "#3B82F6",    // blue
-  Invoice: "#F59E0B",     // amber
-  GSTR1Return: "#10B981", // green
-  GSTR2BReturn: "#8B5CF6",// purple
-  GSTR3BReturn: "#EC4899",// pink
-  User: "#6B7280",        // gray
+  Taxpayer: "#ffffff",
+  Invoice: "#888888",
+  GSTR1Return: "#c0c0c0",
+  GSTR2BReturn: "#a0a0a0",
+  GSTR3BReturn: "#707070",
+  User: "#505050",
+  EInvoice: "#d4d4d4",
+  EWayBill: "#b0b0b0",
+  PurchaseRegisterEntry: "#909090",
 };
 
 const NODE_COLORS_DIM: Record<string, string> = {
-  Taxpayer: "#3B82F630",
-  Invoice: "#F59E0B30",
-  GSTR1Return: "#10B98130",
-  GSTR2BReturn: "#8B5CF630",
-  GSTR3BReturn: "#EC489930",
-  User: "#6B728030",
+  Taxpayer: "#ffffff30",
+  Invoice: "#88888830",
+  GSTR1Return: "#c0c0c030",
+  GSTR2BReturn: "#a0a0a030",
+  GSTR3BReturn: "#70707030",
+  User: "#50505030",
+  EInvoice: "#d4d4d430",
+  EWayBill: "#b0b0b030",
+  PurchaseRegisterEntry: "#90909030",
 };
 
 const NODE_SIZES: Record<string, number> = {
-  Taxpayer: 12,
+  Taxpayer: 14,
   Invoice: 6,
   GSTR1Return: 8,
   GSTR2BReturn: 8,
   GSTR3BReturn: 8,
   User: 5,
+  EInvoice: 7,
+  EWayBill: 7,
+  PurchaseRegisterEntry: 6,
 };
 
 const NODE_LABELS: Record<string, string> = {
@@ -101,6 +110,11 @@ const LINK_LABELS: Record<string, string> = {
   CONTAINS_INWARD: "contains",
   FILED: "filed",
   RECEIVED: "received",
+  GENERATES: "generates",
+  COVERS: "covers",
+  TRANSPORTED_BY: "transported by",
+  RECORDED_IN: "recorded in",
+  CLAIMS_ITC: "claims ITC",
 };
 
 const HIDDEN_KEYS = new Set([

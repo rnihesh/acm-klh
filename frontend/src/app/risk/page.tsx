@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import { CardSkeleton } from "@/components/Skeleton";
 import { getVendorRisks, getVendorRiskSummary } from "@/lib/api";
@@ -221,6 +222,13 @@ export default function RiskPage() {
                   <Bot className="w-3 h-3" />
                   AI Risk Summary
                 </button>
+                <Link
+                  href={`/risk/${vendor.gstin}`}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 c-bg-dark hover:c-bg-card rounded-lg c-text-2 text-xs transition-colors mt-2"
+                >
+                  <ShieldAlert className="w-3 h-3" />
+                  View Scorecard
+                </Link>
               </div>
             ))}
           </div>
