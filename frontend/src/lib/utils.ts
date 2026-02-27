@@ -20,29 +20,29 @@ export function formatNumber(num: number): string {
 export function severityColor(severity: string): string {
   switch (severity) {
     case "CRITICAL":
-      return "text-red-500 bg-red-500/10";
+      return "text-red-400 bg-red-500/10";
     case "HIGH":
-      return "text-orange-500 bg-orange-500/10";
+      return "text-orange-400 bg-orange-500/10";
     case "MEDIUM":
-      return "text-yellow-500 bg-yellow-500/10";
+      return "text-accent bg-accent/10";
     case "LOW":
-      return "text-green-500 bg-green-500/10";
+      return "text-emerald-400 bg-emerald-500/10";
     default:
-      return "text-gray-500 bg-gray-500/10";
+      return "text-content-tertiary bg-surface-border/20";
   }
 }
 
 export function riskColor(risk: string): string {
   switch (risk) {
     case "CRITICAL":
-      return "text-red-400 border-red-500/50 bg-red-500/10";
+      return "text-red-400 border-red-500/30 bg-red-500/10";
     case "HIGH":
-      return "text-orange-400 border-orange-500/50 bg-orange-500/10";
+      return "text-orange-400 border-orange-500/30 bg-orange-500/10";
     case "MEDIUM":
-      return "text-yellow-400 border-yellow-500/50 bg-yellow-500/10";
+      return "text-accent border-accent/30 bg-accent/10";
     case "LOW":
-      return "text-green-400 border-green-500/50 bg-green-500/10";
+      return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
     default:
-      return "text-gray-400 border-gray-500/50 bg-gray-500/10";
+      return "text-content-tertiary border-surface-border bg-surface-border/20";
   }
 }

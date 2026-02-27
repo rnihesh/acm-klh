@@ -30,11 +30,11 @@ interface CircularTrade {
 }
 
 const NODE_COLORS: Record<string, string> = {
-  Taxpayer: "#3b82f6",
-  Invoice: "#22c55e",
-  GSTR1Return: "#f59e0b",
-  GSTR2BReturn: "#8b5cf6",
-  GSTR3BReturn: "#ec4899",
+  Taxpayer: "#d97757",
+  Invoice: "#5cb85c",
+  GSTR1Return: "#f0ad4e",
+  GSTR2BReturn: "#9b8ec3",
+  GSTR3BReturn: "#d9534f",
 };
 
 export default function GraphPage() {
@@ -96,7 +96,7 @@ export default function GraphPage() {
 
   const nodeColor = useCallback((node: object) => {
     const n = node as GraphNode;
-    return NODE_COLORS[n.type] || "#6b7280";
+    return NODE_COLORS[n.type] || "#6b6b6b";
   }, []);
 
   return (
@@ -107,32 +107,32 @@ export default function GraphPage() {
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-tertiary" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Search GSTIN, trade name, invoice..."
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-3 py-2 text-white text-sm focus:ring-2 focus:ring-blue-500/40 outline-none"
+            className="w-full rounded-lg pl-10 pr-3 py-2 text-sm outline-none"
           />
         </div>
         <button
           onClick={handleSearch}
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-sm transition-colors"
+          className="px-4 py-2 bg-surface-dark hover:bg-surface-card rounded-lg text-content text-sm transition-colors"
         >
           Search
         </button>
         <button
           onClick={loadGraph}
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-sm transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-surface-dark hover:bg-surface-card rounded-lg text-content text-sm transition-colors flex items-center gap-2"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           Reset
         </button>
         <button
           onClick={loadCircularTrades}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/30 rounded-lg text-red-400 text-sm transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/15 border border-red-500/20 rounded-lg text-red-400 text-sm transition-colors"
         >
           <AlertTriangle className="w-4 h-4" />
           Detect Circular Trades
@@ -147,20 +147,20 @@ export default function GraphPage() {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: color }}
             />
-            <span className="text-xs text-gray-400">{label}</span>
+            <span className="text-xs text-content-secondary">{label}</span>
           </div>
         ))}
-        <span className="text-xs text-gray-600 ml-auto">
+        <span className="text-xs text-content-tertiary ml-auto">
           {graphData.nodes.length} nodes
         </span>
       </div>
 
       {/* Graph + Node Detail side-by-side */}
       <div className="flex gap-4">
-        <div className="flex-1 bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
+        <div className="flex-1 bg-surface-card rounded-xl border border-surface-border overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-[600px]">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent border-t-transparent" />
             </div>
           ) : graphData.nodes.length > 0 ? (
             <ForceGraph2D
@@ -171,15 +171,15 @@ export default function GraphPage() {
                 return `${n.type}: ${n.label || n.id}`;
               }}
               onNodeClick={(node: object) => setSelectedNode(node as GraphNode)}
-              linkColor={() => "#334155"}
+              linkColor={() => "#3a3a3a"}
               linkDirectionalArrowLength={4}
               linkDirectionalArrowRelPos={1}
-              backgroundColor="#111827"
+              backgroundColor="#1a1a1a"
               height={600}
               nodeRelSize={6}
             />
           ) : (
-            <div className="flex items-center justify-center h-[600px] text-gray-500">
+            <div className="flex items-center justify-center h-[600px] text-content-tertiary">
               No graph data. Upload GST returns first.
             </div>
           )}
@@ -187,20 +187,20 @@ export default function GraphPage() {
 
         {/* Node detail panel */}
         {selectedNode && (
-          <div className="w-72 bg-[#111827] rounded-xl border border-gray-800 p-4 h-fit max-h-[600px] overflow-y-auto">
+          <div className="w-72 bg-surface-card rounded-xl border border-surface-border p-4 h-fit max-h-[600px] overflow-y-auto">
             <div className="flex items-center justify-between mb-3">
               <span
                 className="text-xs font-medium px-2 py-1 rounded"
                 style={{
-                  backgroundColor: `${NODE_COLORS[selectedNode.type] || "#6b7280"}20`,
-                  color: NODE_COLORS[selectedNode.type] || "#6b7280",
+                  backgroundColor: `${NODE_COLORS[selectedNode.type] || "#6b6b6b"}20`,
+                  color: NODE_COLORS[selectedNode.type] || "#6b6b6b",
                 }}
               >
                 {selectedNode.type}
               </span>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="text-gray-500 hover:text-gray-300 text-xs"
+                className="text-content-tertiary hover:text-content-secondary text-xs"
               >
                 Close
               </button>
@@ -213,10 +213,10 @@ export default function GraphPage() {
                 )
                 .map(([key, value]) => (
                   <div key={key}>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                    <span className="text-[10px] text-content-tertiary uppercase tracking-wider">
                       {key}
                     </span>
-                    <p className="text-xs text-gray-300 font-mono break-all">
+                    <p className="text-xs text-content-secondary font-mono break-all">
                       {String(value)}
                     </p>
                   </div>
@@ -228,7 +228,7 @@ export default function GraphPage() {
 
       {/* Circular Trades Panel */}
       {showCircular && (
-        <div className="mt-6 bg-[#111827] rounded-xl border border-red-800/50 p-6">
+        <div className="mt-6 bg-surface-card rounded-xl border border-red-500/20 p-6">
           <h2 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />
             Circular Trade Detection
@@ -236,7 +236,7 @@ export default function GraphPage() {
           {circularTrades.length > 0 ? (
             <div className="space-y-3">
               {circularTrades.map((trade, i) => (
-                <div key={i} className="p-3 bg-red-900/10 border border-red-800/20 rounded-lg">
+                <div key={i} className="p-3 bg-red-500/5 border border-red-500/10 rounded-lg">
                   <div className="flex items-center gap-2 flex-wrap">
                     {trade.cycle.map((gstin, j) => (
                       <span key={j} className="flex items-center gap-1">
@@ -244,12 +244,12 @@ export default function GraphPage() {
                           {gstin.slice(0, 4)}...{gstin.slice(-4)}
                         </span>
                         {j < trade.cycle.length - 1 && (
-                          <span className="text-gray-600">→</span>
+                          <span className="text-content-tertiary">&rarr;</span>
                         )}
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5">
+                  <p className="text-xs text-content-tertiary mt-1.5">
                     {trade.cycle_length} entities in cycle
                     {trade.names?.[0] && ` — starting from ${trade.names[0]}`}
                   </p>
@@ -257,7 +257,7 @@ export default function GraphPage() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">
+            <p className="text-content-tertiary text-sm">
               No circular trading patterns detected.
             </p>
           )}

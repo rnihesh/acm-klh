@@ -58,19 +58,19 @@ export default function AuditPage() {
           {trails.map((trail) => (
             <div
               key={trail.id}
-              className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden"
+              className="bg-surface-card rounded-xl border border-surface-border overflow-hidden"
             >
               <button
                 onClick={() =>
                   setExpandedId(expandedId === trail.id ? null : trail.id)
                 }
-                className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-800/30 transition-colors"
+                className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-dark/30 transition-colors"
               >
                 <div className="text-left">
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-content">
                     Mismatch: {trail.mismatch_id || trail.id.slice(0, 8)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-content-tertiary mt-1">
                     Generated: {new Date(trail.generated_at).toLocaleString()}
                   </p>
                 </div>
@@ -80,58 +80,58 @@ export default function AuditPage() {
                       e.stopPropagation();
                       copyTrail(trail);
                     }}
-                    className="p-1.5 hover:bg-gray-700 rounded transition-colors"
+                    className="p-1.5 hover:bg-surface-border rounded transition-colors"
                   >
                     {copied === trail.id ? (
-                      <Check className="w-4 h-4 text-green-400" />
+                      <Check className="w-4 h-4 text-emerald-400" />
                     ) : (
-                      <Copy className="w-4 h-4 text-gray-500" />
+                      <Copy className="w-4 h-4 text-content-tertiary" />
                     )}
                   </button>
                   {expandedId === trail.id ? (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className="w-5 h-5 text-content-secondary" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <ChevronRight className="w-5 h-5 text-content-secondary" />
                   )}
                 </div>
               </button>
 
               {expandedId === trail.id && (
-                <div className="px-6 pb-6 border-t border-gray-800 pt-4 space-y-6">
+                <div className="px-6 pb-6 border-t border-surface-border pt-4 space-y-6">
                   {/* AI Explanation */}
                   <div>
-                    <h3 className="text-sm font-semibold text-blue-400 mb-2">
+                    <h3 className="text-sm font-semibold text-accent mb-2">
                       AI Explanation
                     </h3>
-                    <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap bg-gray-800/30 rounded-lg p-4">
+                    <p className="text-sm text-content-secondary leading-relaxed whitespace-pre-wrap bg-surface-dark/50 rounded-lg p-4">
                       {trail.explanation}
                     </p>
                   </div>
 
                   {/* Invoice Chain */}
                   <div>
-                    <h3 className="text-sm font-semibold text-blue-400 mb-3">
+                    <h3 className="text-sm font-semibold text-accent mb-3">
                       Invoice Chain
                     </h3>
                     <div className="relative">
                       {/* Vertical line connector */}
-                      <div className="absolute left-[11px] top-4 bottom-4 w-0.5 bg-gray-800" />
+                      <div className="absolute left-[11px] top-4 bottom-4 w-0.5 bg-surface-border" />
                       <div className="space-y-3">
                         {trail.invoice_chain.map((step) => (
                           <div
                             key={step.step}
                             className="flex items-start gap-3 relative"
                           >
-                            <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 z-10">
+                            <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0 z-10">
                               <span className="text-xs text-white font-bold">
                                 {step.step}
                               </span>
                             </div>
-                            <div className="flex-1 p-3 bg-gray-800/50 rounded-lg">
-                              <p className="text-sm text-white">
+                            <div className="flex-1 p-3 bg-surface-dark/50 rounded-lg">
+                              <p className="text-sm text-content">
                                 {step.action}
                               </p>
-                              <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-gray-500">
+                              <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-content-tertiary">
                                 {step.gstin && (
                                   <span className="font-mono">
                                     GSTIN: {step.gstin}
@@ -161,11 +161,11 @@ export default function AuditPage() {
                   </div>
 
                   {/* Recommendation */}
-                  <div className="bg-green-500/5 border border-green-500/10 rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-green-400 mb-2">
+                  <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-emerald-400 mb-2">
                       Recommendation
                     </h3>
-                    <p className="text-sm text-gray-300">
+                    <p className="text-sm text-content-secondary">
                       {trail.recommendation}
                     </p>
                   </div>
@@ -175,10 +175,10 @@ export default function AuditPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-[#111827] rounded-xl border border-gray-800 p-12 text-center">
-          <FileSearch className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-400 font-medium mb-1">No audit trails yet</p>
-          <p className="text-gray-500 text-sm">
+        <div className="bg-surface-card rounded-xl border border-surface-border p-12 text-center">
+          <FileSearch className="w-12 h-12 text-content-tertiary mx-auto mb-4" />
+          <p className="text-content-secondary font-medium mb-1">No audit trails yet</p>
+          <p className="text-content-tertiary text-sm">
             Run reconciliation, then click &quot;Generate AI Audit&quot; on any mismatch.
           </p>
         </div>

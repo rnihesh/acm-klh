@@ -8,8 +8,13 @@ from app.api import ingest, reconcile, audit, risk, stats
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    create_constraints()
+    # Startup — don't crash if Neo4j isn't ready yet
+    try:
+        create_constraints()
+        print("Neo4j connected, constraints created.")
+    except Exception as e:
+        print(f"WARNING: Neo4j not available at startup: {e}")
+        print("The app will start but DB operations will fail until Neo4j is reachable.")
     yield
     # Shutdown
     close_driver()
