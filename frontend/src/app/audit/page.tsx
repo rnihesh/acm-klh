@@ -5,6 +5,7 @@ import PageShell from "@/components/PageShell";
 import { CardSkeleton } from "@/components/Skeleton";
 import { getAuditTrails } from "@/lib/api";
 import { ChevronDown, ChevronRight, FileSearch, Copy, Check } from "lucide-react";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface AuditTrail {
   id: string;
@@ -104,9 +105,9 @@ export default function AuditPage() {
                     <h3 className="text-sm font-semibold c-text-accent mb-2">
                       AI Explanation
                     </h3>
-                    <p className="text-sm c-text-2 leading-relaxed whitespace-pre-wrap c-bg-dark rounded-lg p-4">
-                      {trail.explanation}
-                    </p>
+                    <div className="c-bg-dark rounded-lg p-4">
+                      <MarkdownRenderer content={trail.explanation} />
+                    </div>
                   </div>
 
                   {/* Invoice Chain */}

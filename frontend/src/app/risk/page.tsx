@@ -6,6 +6,7 @@ import { CardSkeleton } from "@/components/Skeleton";
 import { getVendorRisks, getVendorRiskSummary } from "@/lib/api";
 import { riskColor } from "@/lib/utils";
 import { Bot, X, ShieldAlert, Search } from "lucide-react";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface VendorRisk {
   gstin: string;
@@ -287,9 +288,7 @@ export default function RiskPage() {
                   </span>
                 </div>
                 <div className="rounded-lg p-4" style={{ backgroundColor: "var(--bg-dark)" }}>
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
-                    {aiPanel.ai_summary}
-                  </p>
+                  <MarkdownRenderer content={aiPanel.ai_summary} />
                 </div>
               </div>
             ) : null}

@@ -18,6 +18,7 @@ import {
   Bot,
   Loader2,
 } from "lucide-react";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface Mismatch {
   id: string;
@@ -312,9 +313,7 @@ export default function ReconcilePage() {
                                       AI Audit Explanation
                                     </span>
                                   </div>
-                                  <p className="text-sm c-text-2 leading-relaxed whitespace-pre-wrap">
-                                    {auditResults[r.id]}
-                                  </p>
+                                  <MarkdownRenderer content={auditResults[r.id]} />
                                 </div>
                               ) : (
                                 <button

@@ -131,7 +131,7 @@ This finds taxpayers who form closed trading loops — a classic GST fraud patte
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    FRONTEND (Next.js 14)                 │
+│                    FRONTEND (Next.js 14)                │
 │                                                         │
 │  /              → Dashboard (stats + charts)            │
 │  /upload        → File upload (drag & drop)             │
@@ -146,7 +146,7 @@ This finds taxpayers who form closed trading loops — a classic GST fraud patte
                   │ HTTP (localhost:8000)
                   │
 ┌─────────────────▼───────────────────────────────────────┐
-│                   BACKEND (FastAPI)                      │
+│                   BACKEND (FastAPI)                     │
 │                                                         │
 │  API Routers:                                           │
 │    /api/data/*        → ingest.py (file upload/parse)   │
@@ -157,10 +157,10 @@ This finds taxpayers who form closed trading loops — a classic GST fraud patte
 │                                                         │
 │  Core:                                                  │
 │    graph_db.py     → Neo4j driver, Cypher queries,      │
-│                      node ingestion, graph search        │
+│                      node ingestion, graph search       │
 │    reconciler.py   → 5 reconciliation algorithms        │
 │    risk_model.py   → Composite risk scoring engine      │
-│    llm_chain.py    → LLM fallback: OpenAI→Gemini→Ollama│
+│    llm_chain.py    → LLM fallback: OpenAI→Gemini→Ollama │
 │    report_generator.py → PDF/HTML report via Jinja2     │
 │                                                         │
 │  Models:                                                │
@@ -170,7 +170,7 @@ This finds taxpayers who form closed trading loops — a classic GST fraud patte
                   │ Bolt protocol (localhost:7687)
                   │
 ┌─────────────────▼───────────────────────────────────────┐
-│                     NEO4J DATABASE                       │
+│                     NEO4J DATABASE                      │
 │                                                         │
 │  Nodes:                                                 │
 │    (:Taxpayer)     — gstin, legal_name, state_code      │
@@ -180,19 +180,19 @@ This finds taxpayers who form closed trading loops — a classic GST fraud patte
 │    (:GSTR3BReturn) — summary with ITC claimed/available │
 │                                                         │
 │  Relationships:                                         │
-│    (Invoice)-[:SUPPLIED_BY]->(Taxpayer)                  │
-│    (Invoice)-[:SUPPLIED_TO]->(Taxpayer)                  │
-│    (Taxpayer)-[:TRADES_WITH]->(Taxpayer)                 │
+│    (Invoice)-[:SUPPLIED_BY]->(Taxpayer)                 │
+│    (Invoice)-[:SUPPLIED_TO]->(Taxpayer)                 │
+│    (Taxpayer)-[:TRADES_WITH]->(Taxpayer)                │
 │    (Taxpayer)-[:FILED]->(GSTR1Return|GSTR3BReturn)      │
-│    (Taxpayer)-[:RECEIVED]->(GSTR2BReturn)                │
-│    (GSTR1Return)-[:CONTAINS_OUTWARD]->(Invoice)          │
-│    (GSTR2BReturn)-[:CONTAINS_INWARD]->(Invoice)          │
+│    (Taxpayer)-[:RECEIVED]->(GSTR2BReturn)               │
+│    (GSTR1Return)-[:CONTAINS_OUTWARD]->(Invoice)         │
+│    (GSTR2BReturn)-[:CONTAINS_INWARD]->(Invoice)         │
 │                                                         │
 │  Why a graph?                                           │
 │    - Traversal-based reconciliation (follow edges, not  │
 │      join tables)                                       │
-│    - Circular trade detection via path queries           │
-│    - Natural modeling of supplier-buyer-invoice network  │
+│    - Circular trade detection via path queries          │
+│    - Natural modeling of supplier-buyer-invoice network │
 └─────────────────────────────────────────────────────────┘
                   │
                   │ HTTP (configurable URL)
