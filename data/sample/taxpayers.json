@@ -1,0 +1,242 @@
+[
+  {
+    "gstin": "04PTHFV0482S9Z6",
+    "legal_name": "Sharma Electronics Pvt Ltd",
+    "trade_name": "Sharma Electronics Pvt Ltd",
+    "state_code": "04",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "18ERPCZ1095X8ZC",
+    "legal_name": "Patel Textiles",
+    "trade_name": "Patel Textiles",
+    "state_code": "18",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "14WFITC5414X7ZU",
+    "legal_name": "Kumar Steel Industries",
+    "trade_name": "Kumar Steel Industries",
+    "state_code": "14",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "12EGRLT0104G9ZB",
+    "legal_name": "Gupta Pharma Solutions",
+    "trade_name": "Gupta Pharma Solutions",
+    "state_code": "12",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "34MRMLX0106K9ZR",
+    "legal_name": "Singh Auto Parts",
+    "trade_name": "Singh Auto Parts",
+    "state_code": "34",
+    "registration_type": "Composition",
+    "status": "Active"
+  },
+  {
+    "gstin": "36OFIHJ1212T4ZV",
+    "legal_name": "Reddy IT Services",
+    "trade_name": "Reddy IT Services",
+    "state_code": "36",
+    "registration_type": "Composition",
+    "status": "Active"
+  },
+  {
+    "gstin": "08SAVBN6666X0ZR",
+    "legal_name": "Mehta Chemical Works",
+    "trade_name": "Mehta Chemical Works",
+    "state_code": "08",
+    "registration_type": "Composition",
+    "status": "Suspended"
+  },
+  {
+    "gstin": "17GKVLW5496S4ZX",
+    "legal_name": "Jain Plastics",
+    "trade_name": "Jain Plastics",
+    "state_code": "17",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "23ISGHF8386U5Z2",
+    "legal_name": "Agarwal Food Products",
+    "trade_name": "Agarwal Food Products",
+    "state_code": "23",
+    "registration_type": "Composition",
+    "status": "Active"
+  },
+  {
+    "gstin": "35ILUFJ0025T4ZT",
+    "legal_name": "Mishra Construction Co",
+    "trade_name": "Mishra Construction Co",
+    "state_code": "35",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "05HTTTY8627G4ZH",
+    "legal_name": "Verma Logistics",
+    "trade_name": "Verma Logistics",
+    "state_code": "05",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "29GMNTP2619L8ZS",
+    "legal_name": "Yadav Agriculture",
+    "trade_name": "Yadav Agriculture",
+    "state_code": "29",
+    "registration_type": "Composition",
+    "status": "Suspended"
+  },
+  {
+    "gstin": "35MIBTE8493Y6Z2",
+    "legal_name": "Nair Software Labs",
+    "trade_name": "Nair Software Labs",
+    "state_code": "35",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "09YOPJW4498P5ZU",
+    "legal_name": "Iyer Consulting",
+    "trade_name": "Iyer Consulting",
+    "state_code": "09",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "06EHYPV5790S9Z8",
+    "legal_name": "Banerjee Exports",
+    "trade_name": "Banerjee Exports",
+    "state_code": "06",
+    "registration_type": "Regular",
+    "status": "Suspended"
+  },
+  {
+    "gstin": "35SVMAE4539S5ZS",
+    "legal_name": "Chatterjee Imports",
+    "trade_name": "Chatterjee Imports",
+    "state_code": "35",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "23NJLHV1550X5ZK",
+    "legal_name": "Deshpande Motors",
+    "trade_name": "Deshpande Motors",
+    "state_code": "23",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "28ZVZCB3449G2Z3",
+    "legal_name": "Kulkarni Fabrics",
+    "trade_name": "Kulkarni Fabrics",
+    "state_code": "28",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "26HNOTG8108N0ZK",
+    "legal_name": "Pillai Hardware",
+    "trade_name": "Pillai Hardware",
+    "state_code": "26",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "34NIRLQ3181R9ZF",
+    "legal_name": "Menon Financial Services",
+    "trade_name": "Menon Financial Services",
+    "state_code": "34",
+    "registration_type": "Composition",
+    "status": "Active"
+  },
+  {
+    "gstin": "19QVKJE1410H0ZU",
+    "legal_name": "Bose Engineering",
+    "trade_name": "Bose Engineering",
+    "state_code": "19",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "11BMPCW1832H5ZJ",
+    "legal_name": "Ghosh Retail Chain",
+    "trade_name": "Ghosh Retail Chain",
+    "state_code": "11",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "05NJKTW9519A4Z9",
+    "legal_name": "Mukherjee Commodities",
+    "trade_name": "Mukherjee Commodities",
+    "state_code": "05",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "30YRYHA6302V6Z7",
+    "legal_name": "Saha Trading Co",
+    "trade_name": "Saha Trading Co",
+    "state_code": "30",
+    "registration_type": "Regular",
+    "status": "Suspended"
+  },
+  {
+    "gstin": "26SWZBO2262K4ZB",
+    "legal_name": "Mondal Electronics Hub",
+    "trade_name": "Mondal Electronics Hub",
+    "state_code": "26",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "10WTCJH1513X8ZY",
+    "legal_name": "Biswas Paper Mills",
+    "trade_name": "Biswas Paper Mills",
+    "state_code": "10",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "35EKFBR8883P5Z7",
+    "legal_name": "Halder Ceramics",
+    "trade_name": "Halder Ceramics",
+    "state_code": "35",
+    "registration_type": "Regular",
+    "status": "Suspended"
+  },
+  {
+    "gstin": "25TQQBM5822U8ZO",
+    "legal_name": "Chakraborty Chemicals",
+    "trade_name": "Chakraborty Chemicals",
+    "state_code": "25",
+    "registration_type": "Regular",
+    "status": "Active"
+  },
+  {
+    "gstin": "09DUECO8333V7ZN",
+    "legal_name": "Das Auto Dealers",
+    "trade_name": "Das Auto Dealers",
+    "state_code": "09",
+    "registration_type": "Composition",
+    "status": "Active"
+  },
+  {
+    "gstin": "30OQVBC8670T3ZB",
+    "legal_name": "Roy Metal Works",
+    "trade_name": "Roy Metal Works",
+    "state_code": "30",
+    "registration_type": "Composition",
+    "status": "Active"
+  }
+]
