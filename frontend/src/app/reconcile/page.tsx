@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import PageShell from "@/components/PageShell";
+import { TableSkeleton } from "@/components/Skeleton";
 import {
   triggerReconciliation,
   getReconciliationResults,
@@ -9,25 +10,14 @@ import {
 } from "@/lib/api";
 import { formatCurrency, severityColor } from "@/lib/utils";
 import {
-  BarChart3,
-  Upload,
-  GitCompare,
-  Network,
-  FileSearch,
-  ShieldAlert,
   Play,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Bot,
+  Loader2,
 } from "lucide-react";
-
-const navItems = [
-  { href: "/", label: "Dashboard", icon: BarChart3 },
-  { href: "/upload", label: "Upload", icon: Upload },
-  { href: "/reconcile", label: "Reconciliation", icon: GitCompare },
-  { href: "/graph", label: "Graph Explorer", icon: Network },
-  { href: "/audit", label: "Audit Trails", icon: FileSearch },
-  { href: "/risk", label: "Vendor Risk", icon: ShieldAlert },
-];
 
 interface Mismatch {
   id: string;
@@ -38,6 +28,10 @@ interface Mismatch {
   invoice_number: string;
   amount_difference: number;
   description: string;
+  field_name?: string;
+  expected_value?: string;
+  actual_value?: string;
+  return_period?: string;
 }
 
 interface ReconcileStatus {
@@ -56,6 +50,9 @@ export default function ReconcilePage() {
   const [filterSeverity, setFilterSeverity] = useState("");
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [auditLoading, setAuditLoading] = useState<string | null>(null);
+  const [auditResults, setAuditResults] = useState<Record<string, string>>({});
 
   const runReconciliation = async () => {
     setRunning(true);
@@ -86,220 +83,300 @@ export default function ReconcilePage() {
     }
   };
 
+  const handleAudit = async (mismatch: Mismatch) => {
+    if (auditResults[mismatch.id]) return;
+    setAuditLoading(mismatch.id);
+    try {
+      const res = (await generateAuditTrail(
+        mismatch as unknown as Record<string, unknown>
+      )) as { explanation: string };
+      setAuditResults((prev) => ({
+        ...prev,
+        [mismatch.id]: res.explanation,
+      }));
+    } catch {
+      setAuditResults((prev) => ({
+        ...prev,
+        [mismatch.id]: "Failed to generate audit explanation.",
+      }));
+    }
+    setAuditLoading(null);
+  };
+
   return (
-    <div className="flex min-h-screen">
-      <nav className="w-64 bg-[#111827] border-r border-gray-800 p-4 flex flex-col gap-1">
-        <div className="flex items-center gap-2 px-3 py-4 mb-4">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <GitCompare className="w-5 h-5 text-white" />
+    <PageShell
+      title="GST Reconciliation"
+      description="Match GSTR-1 vs GSTR-2B via Knowledge Graph traversal"
+    >
+      {/* Controls */}
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <input
+          type="text"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value)}
+          placeholder="Return period (MMYYYY)"
+          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm w-48 focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 outline-none"
+        />
+        <button
+          onClick={runReconciliation}
+          disabled={running}
+          className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
+        >
+          {running ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Play className="w-4 h-4" />
+          )}
+          {running ? "Running..." : "Run Reconciliation"}
+        </button>
+
+        {status && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <span className="text-sm text-green-400">
+              {status.total_mismatches} mismatches found
+            </span>
           </div>
-          <span className="text-lg font-bold text-white">GST Recon</span>
-        </div>
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-              item.href === "/reconcile"
-                ? "bg-blue-600/20 text-blue-400"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
-            }`}
-          >
-            <item.icon className="w-4 h-4" />
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+        )}
+      </div>
 
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold text-white mb-2">
-            GST Reconciliation
-          </h1>
-          <p className="text-gray-400 mb-6">
-            Match GSTR-1 vs GSTR-2B via Knowledge Graph traversal
-          </p>
-
-          {/* Controls */}
-          <div className="flex items-center gap-4 mb-6">
-            <input
-              type="text"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              placeholder="Return period (MMYYYY)"
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm w-48"
-            />
+      {/* Breakdown chips */}
+      {status?.breakdown && Object.keys(status.breakdown).length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {Object.entries(status.breakdown).map(([type, count]) => (
             <button
-              onClick={runReconciliation}
-              disabled={running}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
+              key={type}
+              onClick={() => {
+                setFilterType(filterType === type ? "" : type);
+                fetchResults(1);
+              }}
+              className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
+                filterType === type
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+              }`}
             >
-              <Play className="w-4 h-4" />
-              {running ? "Running..." : "Run Reconciliation"}
+              {type}: {count as number}
             </button>
+          ))}
+        </div>
+      )}
 
-            {status && (
-              <span className="text-sm text-gray-400">
-                Found {status.total_mismatches} mismatches
-              </span>
-            )}
-          </div>
+      {/* Filters */}
+      {results.length > 0 && (
+        <div className="flex items-center gap-4 mb-4">
+          <select
+            value={filterType}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              fetchResults(1);
+            }}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-blue-500/40 outline-none"
+          >
+            <option value="">All Types</option>
+            <option value="MISSING_IN_GSTR2B">Missing in GSTR-2B</option>
+            <option value="MISSING_IN_GSTR1">Missing in GSTR-1</option>
+            <option value="VALUE_MISMATCH">Value Mismatch</option>
+            <option value="RATE_MISMATCH">Rate Mismatch</option>
+            <option value="DUPLICATE_INVOICE">Duplicate Invoice</option>
+            <option value="EXCESS_ITC">Excess ITC</option>
+          </select>
+          <select
+            value={filterSeverity}
+            onChange={(e) => {
+              setFilterSeverity(e.target.value);
+              fetchResults(1);
+            }}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:ring-2 focus:ring-blue-500/40 outline-none"
+          >
+            <option value="">All Severities</option>
+            <option value="CRITICAL">Critical</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+        </div>
+      )}
 
-          {/* Breakdown */}
-          {status?.breakdown && Object.keys(status.breakdown).length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              {Object.entries(status.breakdown).map(([type, count]) => (
-                <span
-                  key={type}
-                  className="px-3 py-1 bg-gray-800 rounded-full text-xs text-gray-300 font-mono"
-                >
-                  {type}: {count as number}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Filters */}
-          {results.length > 0 && (
-            <div className="flex items-center gap-4 mb-4">
-              <select
-                value={filterType}
-                onChange={(e) => {
-                  setFilterType(e.target.value);
-                  fetchResults(1);
-                }}
-                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
-              >
-                <option value="">All Types</option>
-                <option value="MISSING_IN_GSTR2B">Missing in GSTR-2B</option>
-                <option value="MISSING_IN_GSTR1">Missing in GSTR-1</option>
-                <option value="VALUE_MISMATCH">Value Mismatch</option>
-                <option value="RATE_MISMATCH">Rate Mismatch</option>
-                <option value="DUPLICATE_INVOICE">Duplicate Invoice</option>
-                <option value="EXCESS_ITC">Excess ITC</option>
-              </select>
-              <select
-                value={filterSeverity}
-                onChange={(e) => {
-                  setFilterSeverity(e.target.value);
-                  fetchResults(1);
-                }}
-                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
-              >
-                <option value="">All Severities</option>
-                <option value="CRITICAL">Critical</option>
-                <option value="HIGH">High</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="LOW">Low</option>
-              </select>
-            </div>
-          )}
-
-          {/* Results Table */}
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
-            </div>
-          ) : results.length > 0 ? (
-            <>
-              <div className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="text-left px-4 py-3 text-gray-400 font-medium">
-                        Type
-                      </th>
-                      <th className="text-left px-4 py-3 text-gray-400 font-medium">
-                        Severity
-                      </th>
-                      <th className="text-left px-4 py-3 text-gray-400 font-medium">
-                        Invoice
-                      </th>
-                      <th className="text-left px-4 py-3 text-gray-400 font-medium">
-                        Supplier GSTIN
-                      </th>
-                      <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                        Difference
-                      </th>
-                      <th className="text-right px-4 py-3 text-gray-400 font-medium">
-                        Action
-                      </th>
+      {/* Results Table */}
+      {loading ? (
+        <TableSkeleton rows={8} />
+      ) : results.length > 0 ? (
+        <>
+          <div className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 bg-gray-800/30">
+                  <th className="text-left px-4 py-3 text-gray-400 font-medium w-8" />
+                  <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                    Type
+                  </th>
+                  <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                    Severity
+                  </th>
+                  <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                    Invoice
+                  </th>
+                  <th className="text-left px-4 py-3 text-gray-400 font-medium">
+                    Supplier GSTIN
+                  </th>
+                  <th className="text-right px-4 py-3 text-gray-400 font-medium">
+                    Difference
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((r) => (
+                  <>
+                    <tr
+                      key={r.id}
+                      onClick={() =>
+                        setExpandedId(expandedId === r.id ? null : r.id)
+                      }
+                      className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        {expandedId === r.id ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-xs text-gray-300">
+                          {r.mismatch_type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded ${severityColor(r.severity)}`}
+                        >
+                          {r.severity}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-300 font-mono text-xs">
+                        {r.invoice_number}
+                      </td>
+                      <td className="px-4 py-3 text-gray-300 font-mono text-xs">
+                        {r.supplier_gstin}
+                      </td>
+                      <td className="px-4 py-3 text-right text-white font-medium">
+                        {formatCurrency(r.amount_difference)}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r) => (
-                      <tr
-                        key={r.id}
-                        className="border-b border-gray-800/50 hover:bg-gray-800/30"
-                      >
-                        <td className="px-4 py-3">
-                          <span className="font-mono text-xs text-gray-300">
-                            {r.mismatch_type}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`text-xs font-medium px-2 py-1 rounded ${severityColor(r.severity)}`}
-                          >
-                            {r.severity}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-300 font-mono text-xs">
-                          {r.invoice_number}
-                        </td>
-                        <td className="px-4 py-3 text-gray-300 font-mono text-xs">
-                          {r.supplier_gstin}
-                        </td>
-                        <td className="px-4 py-3 text-right text-white">
-                          {formatCurrency(r.amount_difference)}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => generateAuditTrail(r as unknown as Record<string, unknown>)}
-                            className="text-xs text-blue-400 hover:text-blue-300"
-                          >
-                            Generate Audit
-                          </button>
+                    {expandedId === r.id && (
+                      <tr key={`${r.id}-detail`} className="border-b border-gray-800/50">
+                        <td colSpan={6} className="px-4 py-4 bg-gray-900/40">
+                          <div className="space-y-3">
+                            <p className="text-sm text-gray-300">
+                              {r.description}
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                              <div>
+                                <span className="text-gray-500">Buyer GSTIN</span>
+                                <p className="text-gray-300 font-mono mt-0.5">
+                                  {r.buyer_gstin || "N/A"}
+                                </p>
+                              </div>
+                              {r.field_name && (
+                                <div>
+                                  <span className="text-gray-500">Field</span>
+                                  <p className="text-gray-300 font-mono mt-0.5">
+                                    {r.field_name}
+                                  </p>
+                                </div>
+                              )}
+                              {r.expected_value && (
+                                <div>
+                                  <span className="text-gray-500">Expected</span>
+                                  <p className="text-green-400 font-mono mt-0.5">
+                                    {r.expected_value}
+                                  </p>
+                                </div>
+                              )}
+                              {r.actual_value && (
+                                <div>
+                                  <span className="text-gray-500">Actual</span>
+                                  <p className="text-red-400 font-mono mt-0.5">
+                                    {r.actual_value}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                            {/* AI Audit Button */}
+                            <div className="pt-2 border-t border-gray-800">
+                              {auditResults[r.id] ? (
+                                <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Bot className="w-4 h-4 text-blue-400" />
+                                    <span className="text-xs font-medium text-blue-400">
+                                      AI Audit Explanation
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                    {auditResults[r.id]}
+                                  </p>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAudit(r);
+                                  }}
+                                  disabled={auditLoading === r.id}
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 rounded-lg text-blue-400 text-xs transition-colors disabled:opacity-50"
+                                >
+                                  {auditLoading === r.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Bot className="w-3 h-3" />
+                                  )}
+                                  Generate AI Audit Explanation
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    )}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-              {/* Pagination */}
-              <div className="flex items-center justify-between mt-4">
-                <span className="text-sm text-gray-400">
-                  {total} results total
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => fetchResults(page - 1)}
-                    disabled={page <= 1}
-                    className="p-2 bg-gray-800 rounded-lg disabled:opacity-30 text-gray-400 hover:text-white"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <span className="text-sm text-gray-400">
-                    Page {page} of {Math.ceil(total / 50)}
-                  </span>
-                  <button
-                    onClick={() => fetchResults(page + 1)}
-                    disabled={page >= Math.ceil(total / 50)}
-                    className="p-2 bg-gray-800 rounded-lg disabled:opacity-30 text-gray-400 hover:text-white"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : status ? (
-            <p className="text-gray-500 text-center py-12">
-              No mismatches found for period {period}.
-            </p>
-          ) : null}
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4">
+            <span className="text-sm text-gray-400">
+              {total} results total
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchResults(page - 1)}
+                disabled={page <= 1}
+                className="p-2 bg-gray-800 rounded-lg disabled:opacity-30 text-gray-400 hover:text-white transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-gray-400 min-w-[100px] text-center">
+                Page {page} of {Math.max(1, Math.ceil(total / 50))}
+              </span>
+              <button
+                onClick={() => fetchResults(page + 1)}
+                disabled={page >= Math.ceil(total / 50)}
+                className="p-2 bg-gray-800 rounded-lg disabled:opacity-30 text-gray-400 hover:text-white transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </>
+      ) : status ? (
+        <div className="bg-[#111827] rounded-xl border border-gray-800 p-12 text-center">
+          <p className="text-gray-500">
+            No mismatches found for period {period}.
+          </p>
         </div>
-      </main>
-    </div>
+      ) : null}
+    </PageShell>
   );
 }

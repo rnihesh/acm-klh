@@ -1,32 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import dynamic from "next/dynamic";
+import PageShell from "@/components/PageShell";
 import { getGraphNodes, searchGraph, getCircularTrades } from "@/lib/api";
-import {
-  BarChart3,
-  Upload,
-  GitCompare,
-  Network,
-  FileSearch,
-  ShieldAlert,
-  Search,
-  AlertTriangle,
-} from "lucide-react";
+import { Search, AlertTriangle, RotateCcw } from "lucide-react";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
 });
-
-const navItems = [
-  { href: "/", label: "Dashboard", icon: BarChart3 },
-  { href: "/upload", label: "Upload", icon: Upload },
-  { href: "/reconcile", label: "Reconciliation", icon: GitCompare },
-  { href: "/graph", label: "Graph Explorer", icon: Network },
-  { href: "/audit", label: "Audit Trails", icon: FileSearch },
-  { href: "/risk", label: "Vendor Risk", icon: ShieldAlert },
-];
 
 interface GraphNode {
   id: string;
@@ -42,9 +24,18 @@ interface GraphLink {
 }
 
 interface CircularTrade {
-  path: string[];
-  length: number;
+  cycle: string[];
+  names: string[];
+  cycle_length: number;
 }
+
+const NODE_COLORS: Record<string, string> = {
+  Taxpayer: "#3b82f6",
+  Invoice: "#22c55e",
+  GSTR1Return: "#f59e0b",
+  GSTR2BReturn: "#8b5cf6",
+  GSTR3BReturn: "#ec4899",
+};
 
 export default function GraphPage() {
   const [graphData, setGraphData] = useState<{
@@ -55,6 +46,7 @@ export default function GraphPage() {
   const [circularTrades, setCircularTrades] = useState<CircularTrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCircular, setShowCircular] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
   useEffect(() => {
     loadGraph();
@@ -94,169 +86,183 @@ export default function GraphPage() {
 
   const loadCircularTrades = async () => {
     try {
-      const data = (await getCircularTrades()) as {
-        circular_trades: CircularTrade[];
-      };
-      setCircularTrades(data.circular_trades || []);
+      const data = (await getCircularTrades()) as CircularTrade[];
+      setCircularTrades(Array.isArray(data) ? data : []);
       setShowCircular(true);
     } catch {
       // pass
     }
   };
 
-  const nodeColor = useCallback((node: GraphNode) => {
-    switch (node.type) {
-      case "Taxpayer":
-        return "#3b82f6";
-      case "Invoice":
-        return "#22c55e";
-      case "GSTR1Return":
-        return "#f59e0b";
-      case "GSTR2BReturn":
-        return "#8b5cf6";
-      default:
-        return "#6b7280";
-    }
+  const nodeColor = useCallback((node: object) => {
+    const n = node as GraphNode;
+    return NODE_COLORS[n.type] || "#6b7280";
   }, []);
 
   return (
-    <div className="flex min-h-screen">
-      <nav className="w-64 bg-[#111827] border-r border-gray-800 p-4 flex flex-col gap-1">
-        <div className="flex items-center gap-2 px-3 py-4 mb-4">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <GitCompare className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-lg font-bold text-white">GST Recon</span>
+    <PageShell
+      title="Knowledge Graph Explorer"
+      description="Visualize taxpayer-invoice relationships and detect circular trading"
+    >
+      {/* Controls */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            placeholder="Search GSTIN, trade name, invoice..."
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-3 py-2 text-white text-sm focus:ring-2 focus:ring-blue-500/40 outline-none"
+          />
         </div>
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-              item.href === "/graph"
-                ? "bg-blue-600/20 text-blue-400"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
-            }`}
-          >
-            <item.icon className="w-4 h-4" />
-            {item.label}
-          </Link>
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-sm transition-colors"
+        >
+          Search
+        </button>
+        <button
+          onClick={loadGraph}
+          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-sm transition-colors flex items-center gap-2"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Reset
+        </button>
+        <button
+          onClick={loadCircularTrades}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/30 rounded-lg text-red-400 text-sm transition-colors"
+        >
+          <AlertTriangle className="w-4 h-4" />
+          Detect Circular Trades
+        </button>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-5 mb-4">
+        {Object.entries(NODE_COLORS).map(([label, color]) => (
+          <div key={label} className="flex items-center gap-2">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            <span className="text-xs text-gray-400">{label}</span>
+          </div>
         ))}
-      </nav>
+        <span className="text-xs text-gray-600 ml-auto">
+          {graphData.nodes.length} nodes
+        </span>
+      </div>
 
-      <main className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Knowledge Graph Explorer
-          </h1>
-          <p className="text-gray-400 mb-6">
-            Visualize taxpayer-invoice relationships and detect circular trading
-          </p>
-
-          {/* Controls */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search GSTIN, trade name, invoice..."
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-3 py-2 text-white text-sm"
-              />
+      {/* Graph + Node Detail side-by-side */}
+      <div className="flex gap-4">
+        <div className="flex-1 bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center h-[600px]">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
             </div>
-            <button
-              onClick={handleSearch}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-sm"
-            >
-              Search
-            </button>
-            <button
-              onClick={loadCircularTrades}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/30 rounded-lg text-red-400 text-sm"
-            >
-              <AlertTriangle className="w-4 h-4" />
-              Detect Circular Trades
-            </button>
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center gap-6 mb-4">
-            {[
-              { label: "Taxpayer", color: "#3b82f6" },
-              { label: "Invoice", color: "#22c55e" },
-              { label: "GSTR-1", color: "#f59e0b" },
-              { label: "GSTR-2B", color: "#8b5cf6" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-xs text-gray-400">{item.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Graph */}
-          <div className="bg-[#111827] rounded-xl border border-gray-800 overflow-hidden">
-            {loading ? (
-              <div className="flex items-center justify-center h-[600px]">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-              </div>
-            ) : graphData.nodes.length > 0 ? (
-              <ForceGraph2D
-                graphData={graphData}
-                nodeColor={nodeColor as (node: object) => string}
-                nodeLabel={(node: object) => {
-                  const n = node as GraphNode;
-                  return `${n.type}: ${n.label || n.id}`;
-                }}
-                linkColor={() => "#334155"}
-                linkDirectionalArrowLength={4}
-                linkDirectionalArrowRelPos={1}
-                backgroundColor="#111827"
-                width={1100}
-                height={600}
-                nodeRelSize={6}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-[600px] text-gray-500">
-                No graph data. Upload GST returns first.
-              </div>
-            )}
-          </div>
-
-          {/* Circular Trades Panel */}
-          {showCircular && (
-            <div className="mt-6 bg-[#111827] rounded-xl border border-red-800/50 p-6">
-              <h2 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Circular Trade Detection
-              </h2>
-              {circularTrades.length > 0 ? (
-                <div className="space-y-3">
-                  {circularTrades.map((trade, i) => (
-                    <div key={i} className="p-3 bg-red-900/10 rounded-lg">
-                      <span className="text-sm text-red-300 font-mono">
-                        {trade.path.join(" → ")}
-                      </span>
-                      <span className="ml-3 text-xs text-gray-500">
-                        ({trade.length} entities)
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">
-                  No circular trading patterns detected.
-                </p>
-              )}
+          ) : graphData.nodes.length > 0 ? (
+            <ForceGraph2D
+              graphData={graphData}
+              nodeColor={nodeColor}
+              nodeLabel={(node: object) => {
+                const n = node as GraphNode;
+                return `${n.type}: ${n.label || n.id}`;
+              }}
+              onNodeClick={(node: object) => setSelectedNode(node as GraphNode)}
+              linkColor={() => "#334155"}
+              linkDirectionalArrowLength={4}
+              linkDirectionalArrowRelPos={1}
+              backgroundColor="#111827"
+              height={600}
+              nodeRelSize={6}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-[600px] text-gray-500">
+              No graph data. Upload GST returns first.
             </div>
           )}
         </div>
-      </main>
-    </div>
+
+        {/* Node detail panel */}
+        {selectedNode && (
+          <div className="w-72 bg-[#111827] rounded-xl border border-gray-800 p-4 h-fit max-h-[600px] overflow-y-auto">
+            <div className="flex items-center justify-between mb-3">
+              <span
+                className="text-xs font-medium px-2 py-1 rounded"
+                style={{
+                  backgroundColor: `${NODE_COLORS[selectedNode.type] || "#6b7280"}20`,
+                  color: NODE_COLORS[selectedNode.type] || "#6b7280",
+                }}
+              >
+                {selectedNode.type}
+              </span>
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="text-gray-500 hover:text-gray-300 text-xs"
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-2">
+              {Object.entries(selectedNode)
+                .filter(
+                  ([k]) =>
+                    !["id", "x", "y", "vx", "vy", "fx", "fy", "index", "__indexColor"].includes(k)
+                )
+                .map(([key, value]) => (
+                  <div key={key}>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                      {key}
+                    </span>
+                    <p className="text-xs text-gray-300 font-mono break-all">
+                      {String(value)}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Circular Trades Panel */}
+      {showCircular && (
+        <div className="mt-6 bg-[#111827] rounded-xl border border-red-800/50 p-6">
+          <h2 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5" />
+            Circular Trade Detection
+          </h2>
+          {circularTrades.length > 0 ? (
+            <div className="space-y-3">
+              {circularTrades.map((trade, i) => (
+                <div key={i} className="p-3 bg-red-900/10 border border-red-800/20 rounded-lg">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {trade.cycle.map((gstin, j) => (
+                      <span key={j} className="flex items-center gap-1">
+                        <span className="text-sm text-red-300 font-mono bg-red-900/20 px-2 py-0.5 rounded">
+                          {gstin.slice(0, 4)}...{gstin.slice(-4)}
+                        </span>
+                        {j < trade.cycle.length - 1 && (
+                          <span className="text-gray-600">→</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    {trade.cycle_length} entities in cycle
+                    {trade.names?.[0] && ` — starting from ${trade.names[0]}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">
+              No circular trading patterns detected.
+            </p>
+          )}
+        </div>
+      )}
+    </PageShell>
   );
 }
