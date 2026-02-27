@@ -58,19 +58,20 @@ export default function AuditPage() {
           {trails.map((trail) => (
             <div
               key={trail.id}
-              className="bg-surface-card rounded-xl border border-surface-border overflow-hidden"
+              className="c-bg-card rounded-xl border c-border overflow-hidden"
+              style={{ boxShadow: "var(--shadow-sm)" }}
             >
               <button
                 onClick={() =>
                   setExpandedId(expandedId === trail.id ? null : trail.id)
                 }
-                className="w-full flex items-center justify-between px-6 py-4 hover:bg-surface-dark/30 transition-colors"
+                className="w-full flex items-center justify-between px-6 py-4 hover:c-bg-dark transition-colors"
               >
                 <div className="text-left">
-                  <p className="text-sm font-medium text-content">
+                  <p className="text-sm font-medium c-text">
                     Mismatch: {trail.mismatch_id || trail.id.slice(0, 8)}
                   </p>
-                  <p className="text-xs text-content-tertiary mt-1">
+                  <p className="text-xs c-text-3 mt-1">
                     Generated: {new Date(trail.generated_at).toLocaleString()}
                   </p>
                 </div>
@@ -80,58 +81,58 @@ export default function AuditPage() {
                       e.stopPropagation();
                       copyTrail(trail);
                     }}
-                    className="p-1.5 hover:bg-surface-border rounded transition-colors"
+                    className="p-1.5 hover:c-bg-dark rounded transition-colors"
                   >
                     {copied === trail.id ? (
                       <Check className="w-4 h-4 text-emerald-400" />
                     ) : (
-                      <Copy className="w-4 h-4 text-content-tertiary" />
+                      <Copy className="w-4 h-4 c-text-3" />
                     )}
                   </button>
                   {expandedId === trail.id ? (
-                    <ChevronDown className="w-5 h-5 text-content-secondary" />
+                    <ChevronDown className="w-5 h-5 c-text-2" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-content-secondary" />
+                    <ChevronRight className="w-5 h-5 c-text-2" />
                   )}
                 </div>
               </button>
 
               {expandedId === trail.id && (
-                <div className="px-6 pb-6 border-t border-surface-border pt-4 space-y-6">
+                <div className="px-6 pb-6 border-t c-border pt-4 space-y-6">
                   {/* AI Explanation */}
                   <div>
-                    <h3 className="text-sm font-semibold text-accent mb-2">
+                    <h3 className="text-sm font-semibold c-text-accent mb-2">
                       AI Explanation
                     </h3>
-                    <p className="text-sm text-content-secondary leading-relaxed whitespace-pre-wrap bg-surface-dark/50 rounded-lg p-4">
+                    <p className="text-sm c-text-2 leading-relaxed whitespace-pre-wrap c-bg-dark rounded-lg p-4">
                       {trail.explanation}
                     </p>
                   </div>
 
                   {/* Invoice Chain */}
                   <div>
-                    <h3 className="text-sm font-semibold text-accent mb-3">
+                    <h3 className="text-sm font-semibold c-text-accent mb-3">
                       Invoice Chain
                     </h3>
                     <div className="relative">
                       {/* Vertical line connector */}
-                      <div className="absolute left-[11px] top-4 bottom-4 w-0.5 bg-surface-border" />
+                      <div className="absolute left-[11px] top-4 bottom-4 w-0.5 c-bg-border" />
                       <div className="space-y-3">
                         {trail.invoice_chain.map((step) => (
                           <div
                             key={step.step}
                             className="flex items-start gap-3 relative"
                           >
-                            <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center flex-shrink-0 z-10">
+                            <div className="w-6 h-6 rounded-full c-bg-accent flex items-center justify-center flex-shrink-0 z-10">
                               <span className="text-xs text-white font-bold">
                                 {step.step}
                               </span>
                             </div>
-                            <div className="flex-1 p-3 bg-surface-dark/50 rounded-lg">
-                              <p className="text-sm text-content">
+                            <div className="flex-1 p-3 c-bg-dark rounded-lg">
+                              <p className="text-sm c-text">
                                 {step.action}
                               </p>
-                              <div className="flex flex-wrap gap-3 mt-1.5 text-xs text-content-tertiary">
+                              <div className="flex flex-wrap gap-3 mt-1.5 text-xs c-text-3">
                                 {step.gstin && (
                                   <span className="font-mono">
                                     GSTIN: {step.gstin}
@@ -165,7 +166,7 @@ export default function AuditPage() {
                     <h3 className="text-sm font-semibold text-emerald-400 mb-2">
                       Recommendation
                     </h3>
-                    <p className="text-sm text-content-secondary">
+                    <p className="text-sm c-text-2">
                       {trail.recommendation}
                     </p>
                   </div>
@@ -175,10 +176,10 @@ export default function AuditPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-surface-card rounded-xl border border-surface-border p-12 text-center">
-          <FileSearch className="w-12 h-12 text-content-tertiary mx-auto mb-4" />
-          <p className="text-content-secondary font-medium mb-1">No audit trails yet</p>
-          <p className="text-content-tertiary text-sm">
+        <div className="c-bg-card rounded-xl border c-border p-12 text-center">
+          <FileSearch className="w-12 h-12 c-text-3 mx-auto mb-4" />
+          <p className="c-text-2 font-medium mb-1">No audit trails yet</p>
+          <p className="c-text-3 text-sm">
             Run reconciliation, then click &quot;Generate AI Audit&quot; on any mismatch.
           </p>
         </div>

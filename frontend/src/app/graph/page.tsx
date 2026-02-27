@@ -107,7 +107,7 @@ export default function GraphPage() {
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-tertiary" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 c-text-3" />
           <input
             type="text"
             value={searchQuery}
@@ -119,13 +119,13 @@ export default function GraphPage() {
         </div>
         <button
           onClick={handleSearch}
-          className="px-4 py-2 bg-surface-dark hover:bg-surface-card rounded-lg text-content text-sm transition-colors"
+          className="px-4 py-2 c-bg-dark hover:c-bg-card rounded-lg c-text text-sm transition-colors"
         >
           Search
         </button>
         <button
           onClick={loadGraph}
-          className="px-4 py-2 bg-surface-dark hover:bg-surface-card rounded-lg text-content text-sm transition-colors flex items-center gap-2"
+          className="px-4 py-2 c-bg-dark hover:c-bg-card rounded-lg c-text text-sm transition-colors flex items-center gap-2"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           Reset
@@ -147,20 +147,20 @@ export default function GraphPage() {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: color }}
             />
-            <span className="text-xs text-content-secondary">{label}</span>
+            <span className="text-xs c-text-2">{label}</span>
           </div>
         ))}
-        <span className="text-xs text-content-tertiary ml-auto">
+        <span className="text-xs c-text-3 ml-auto">
           {graphData.nodes.length} nodes
         </span>
       </div>
 
       {/* Graph + Node Detail side-by-side */}
       <div className="flex gap-4">
-        <div className="flex-1 bg-surface-card rounded-xl border border-surface-border overflow-hidden">
+        <div className="flex-1 c-bg-card rounded-xl border c-border overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
           {loading ? (
             <div className="flex items-center justify-center h-[600px]">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent border-t-transparent" />
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#d97757] border-t-transparent" />
             </div>
           ) : graphData.nodes.length > 0 ? (
             <ForceGraph2D
@@ -171,15 +171,15 @@ export default function GraphPage() {
                 return `${n.type}: ${n.label || n.id}`;
               }}
               onNodeClick={(node: object) => setSelectedNode(node as GraphNode)}
-              linkColor={() => "#3a3a3a"}
+              linkColor={() => "var(--bg-border)"}
               linkDirectionalArrowLength={4}
               linkDirectionalArrowRelPos={1}
-              backgroundColor="#1a1a1a"
+              backgroundColor="var(--bg-main)"
               height={600}
               nodeRelSize={6}
             />
           ) : (
-            <div className="flex items-center justify-center h-[600px] text-content-tertiary">
+            <div className="flex items-center justify-center h-[600px] c-text-3">
               No graph data. Upload GST returns first.
             </div>
           )}
@@ -187,7 +187,7 @@ export default function GraphPage() {
 
         {/* Node detail panel */}
         {selectedNode && (
-          <div className="w-72 bg-surface-card rounded-xl border border-surface-border p-4 h-fit max-h-[600px] overflow-y-auto">
+          <div className="w-72 c-bg-card rounded-xl border c-border p-4 h-fit max-h-[600px] overflow-y-auto" style={{ boxShadow: "var(--shadow-sm)" }}>
             <div className="flex items-center justify-between mb-3">
               <span
                 className="text-xs font-medium px-2 py-1 rounded"
@@ -200,7 +200,7 @@ export default function GraphPage() {
               </span>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="text-content-tertiary hover:text-content-secondary text-xs"
+                className="c-text-3 hover:c-text-2 text-xs"
               >
                 Close
               </button>
@@ -213,10 +213,10 @@ export default function GraphPage() {
                 )
                 .map(([key, value]) => (
                   <div key={key}>
-                    <span className="text-[10px] text-content-tertiary uppercase tracking-wider">
+                    <span className="text-[10px] c-text-3 uppercase tracking-wider">
                       {key}
                     </span>
-                    <p className="text-xs text-content-secondary font-mono break-all">
+                    <p className="text-xs c-text-2 font-mono break-all">
                       {String(value)}
                     </p>
                   </div>
@@ -228,7 +228,7 @@ export default function GraphPage() {
 
       {/* Circular Trades Panel */}
       {showCircular && (
-        <div className="mt-6 bg-surface-card rounded-xl border border-red-500/20 p-6">
+        <div className="mt-6 c-bg-card rounded-xl border border-red-500/20 p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <h2 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5" />
             Circular Trade Detection
@@ -244,12 +244,12 @@ export default function GraphPage() {
                           {gstin.slice(0, 4)}...{gstin.slice(-4)}
                         </span>
                         {j < trade.cycle.length - 1 && (
-                          <span className="text-content-tertiary">&rarr;</span>
+                          <span className="c-text-3">&rarr;</span>
                         )}
                       </span>
                     ))}
                   </div>
-                  <p className="text-xs text-content-tertiary mt-1.5">
+                  <p className="text-xs c-text-3 mt-1.5">
                     {trade.cycle_length} entities in cycle
                     {trade.names?.[0] && ` — starting from ${trade.names[0]}`}
                   </p>
@@ -257,7 +257,7 @@ export default function GraphPage() {
               ))}
             </div>
           ) : (
-            <p className="text-content-tertiary text-sm">
+            <p className="c-text-3 text-sm">
               No circular trading patterns detected.
             </p>
           )}

@@ -24,11 +24,11 @@ export function severityColor(severity: string): string {
     case "HIGH":
       return "text-orange-400 bg-orange-500/10";
     case "MEDIUM":
-      return "text-accent bg-accent/10";
+      return "text-[#d97757] bg-[#d97757]/10";
     case "LOW":
       return "text-emerald-400 bg-emerald-500/10";
     default:
-      return "text-content-tertiary bg-surface-border/20";
+      return "text-gray-400 bg-gray-500/10";
   }
 }
 
@@ -39,10 +39,10 @@ export function riskColor(risk: string): string {
     case "HIGH":
       return "text-orange-400 border-orange-500/30 bg-orange-500/10";
     case "MEDIUM":
-      return "text-accent border-accent/30 bg-accent/10";
+      return "text-[#d97757] border-[#d97757]/30 bg-[#d97757]/10";
     case "LOW":
       return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
     default:
-      return "text-content-tertiary border-surface-border bg-surface-border/20";
+      return "text-gray-400 border-gray-500/30 bg-gray-500/10";
   }
 }

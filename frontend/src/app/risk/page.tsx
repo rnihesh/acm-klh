@@ -104,14 +104,14 @@ export default function RiskPage() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   filterLevel === level
                     ? `${riskColor(level)} border`
-                    : "bg-surface-dark text-content-secondary hover:bg-surface-card"
+                    : "c-bg-dark c-text-2 hover:c-bg-card"
                 }`}
               >
                 {level}: {riskCounts[level]}
               </button>
             ))}
             <div className="relative ml-auto">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-tertiary" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 c-text-3" />
               <input
                 type="text"
                 value={search}
@@ -127,14 +127,14 @@ export default function RiskPage() {
             {filtered.map((vendor) => (
               <div
                 key={vendor.gstin}
-                className="bg-surface-card rounded-xl border border-surface-border p-5 hover:border-content-tertiary/30 transition-colors"
+                className="c-bg-card rounded-xl border c-border p-5 hover:c-border-accent transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-content truncate">
+                    <p className="text-sm font-semibold c-text truncate">
                       {vendor.legal_name || vendor.trade_name || "Unknown"}
                     </p>
-                    <p className="text-[11px] text-content-tertiary font-mono mt-1">
+                    <p className="text-[11px] c-text-3 font-mono mt-1">
                       {vendor.gstin}
                     </p>
                   </div>
@@ -147,11 +147,11 @@ export default function RiskPage() {
 
                 {/* Score bar */}
                 <div className="mb-3">
-                  <div className="flex justify-between text-xs text-content-secondary mb-1">
+                  <div className="flex justify-between text-xs c-text-2 mb-1">
                     <span>Risk Score</span>
                     <span>{vendor.risk_score.toFixed(0)}/100</span>
                   </div>
-                  <div className="w-full bg-surface-dark rounded-full h-2">
+                  <div className="w-full c-bg-dark rounded-full h-2">
                     <div
                       className={`h-2 rounded-full transition-all ${
                         vendor.risk_score >= 75
@@ -159,7 +159,7 @@ export default function RiskPage() {
                           : vendor.risk_score >= 50
                             ? "bg-orange-500"
                             : vendor.risk_score >= 25
-                              ? "bg-accent"
+                              ? "bg-[#d97757]"
                               : "bg-emerald-500"
                       }`}
                       style={{ width: `${Math.min(100, vendor.risk_score)}%` }}
@@ -169,21 +169,21 @@ export default function RiskPage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                  <div className="bg-surface-dark/50 rounded-lg p-2">
-                    <p className="text-[10px] text-content-tertiary">Invoices</p>
-                    <p className="text-sm font-bold text-content">
+                  <div className="c-bg-dark rounded-lg p-2">
+                    <p className="text-[10px] c-text-3">Invoices</p>
+                    <p className="text-sm font-bold c-text">
                       {vendor.total_invoices}
                     </p>
                   </div>
-                  <div className="bg-surface-dark/50 rounded-lg p-2">
-                    <p className="text-[10px] text-content-tertiary">Mismatches</p>
-                    <p className="text-sm font-bold text-content">
+                  <div className="c-bg-dark rounded-lg p-2">
+                    <p className="text-[10px] c-text-3">Mismatches</p>
+                    <p className="text-sm font-bold c-text">
                       {vendor.mismatch_count}
                     </p>
                   </div>
-                  <div className="bg-surface-dark/50 rounded-lg p-2">
-                    <p className="text-[10px] text-content-tertiary">Filing</p>
-                    <p className="text-sm font-bold text-content">
+                  <div className="c-bg-dark rounded-lg p-2">
+                    <p className="text-[10px] c-text-3">Filing</p>
+                    <p className="text-sm font-bold c-text">
                       {vendor.filing_rate}%
                     </p>
                   </div>
@@ -214,7 +214,7 @@ export default function RiskPage() {
 
                 <button
                   onClick={() => loadAISummary(vendor.gstin)}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-accent-light hover:bg-accent-subtle rounded-lg text-accent text-xs transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 c-bg-accent-light hover:c-bg-accent-light rounded-lg c-text-accent text-xs transition-colors"
                 >
                   <Bot className="w-3 h-3" />
                   AI Risk Summary
@@ -225,17 +225,17 @@ export default function RiskPage() {
 
           {filtered.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-content-tertiary text-sm">
+              <p className="c-text-3 text-sm">
                 No vendors match the current filters.
               </p>
             </div>
           )}
         </>
       ) : (
-        <div className="bg-surface-card rounded-xl border border-surface-border p-12 text-center">
-          <ShieldAlert className="w-12 h-12 text-content-tertiary mx-auto mb-4" />
-          <p className="text-content-secondary font-medium mb-1">No vendor data</p>
-          <p className="text-content-tertiary text-sm">
+        <div className="c-bg-card rounded-xl border c-border p-12 text-center">
+          <ShieldAlert className="w-12 h-12 c-text-3 mx-auto mb-4" />
+          <p className="c-text-2 font-medium mb-1">No vendor data</p>
+          <p className="c-text-3 text-sm">
             Upload GST returns and run reconciliation first.
           </p>
         </div>
@@ -243,11 +243,14 @@ export default function RiskPage() {
 
       {/* AI Summary Modal */}
       {(aiPanel || aiLoading) && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface-card rounded-xl border border-surface-border w-full max-w-lg p-6">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 overflow-y-auto" style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}>
+          <div
+            className="rounded-xl w-full max-w-lg p-6 my-auto max-h-[90vh] overflow-y-auto"
+            style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--bg-border)", boxShadow: "var(--shadow-lg)" }}
+          >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-content flex items-center gap-2">
-                <Bot className="w-5 h-5 text-accent" />
+              <h3 className="text-lg font-semibold flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
+                <Bot className="w-5 h-5" style={{ color: "var(--accent)" }} />
                 AI Risk Analysis
               </h3>
               <button
@@ -255,24 +258,25 @@ export default function RiskPage() {
                   setAiPanel(null);
                   setAiLoading(false);
                 }}
-                className="text-content-secondary hover:text-content p-1"
+                className="p-1 rounded-md transition-colors"
+                style={{ color: "var(--text-secondary)" }}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             {aiLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-accent border-t-transparent mr-3" />
-                <span className="text-content-secondary">Generating analysis...</span>
+                <div className="animate-spin rounded-full h-6 w-6 border-2 mr-3" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
+                <span style={{ color: "var(--text-secondary)" }}>Generating analysis...</span>
               </div>
             ) : aiPanel ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-content">
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                       {aiPanel.vendor.legal_name || aiPanel.vendor.trade_name}
                     </p>
-                    <p className="text-xs text-content-tertiary font-mono">
+                    <p className="text-xs font-mono" style={{ color: "var(--text-tertiary)" }}>
                       {aiPanel.vendor.gstin}
                     </p>
                   </div>
@@ -282,8 +286,8 @@ export default function RiskPage() {
                     {aiPanel.vendor.risk_level}
                   </span>
                 </div>
-                <div className="bg-surface-dark/50 rounded-lg p-4">
-                  <p className="text-sm text-content-secondary leading-relaxed whitespace-pre-wrap">
+                <div className="rounded-lg p-4" style={{ backgroundColor: "var(--bg-dark)" }}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
                     {aiPanel.ai_summary}
                   </p>
                 </div>

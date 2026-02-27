@@ -70,7 +70,41 @@ body {
   }
 }
 
-/* Placeholder contrast fix */
+/* ── Theme utility classes (bypass Tailwind color processing) ── */
+@layer utilities {
+  /* Backgrounds */
+  .c-bg-main { background-color: var(--bg-main); }
+  .c-bg-card { background-color: var(--bg-card); }
+  .c-bg-dark { background-color: var(--bg-dark); }
+  .c-bg-input { background-color: var(--bg-input); }
+  .c-bg-border { background-color: var(--bg-border); }
+  .c-bg-accent { background-color: var(--accent); }
+  .c-bg-accent-hover { background-color: var(--accent-hover); }
+  .c-bg-accent-light { background-color: var(--accent-light); }
+  .c-bg-accent-subtle { background-color: var(--accent-subtle); }
+
+  /* Text */
+  .c-text { color: var(--text-primary); }
+  .c-text-2 { color: var(--text-secondary); }
+  .c-text-3 { color: var(--text-tertiary); }
+  .c-text-accent { color: var(--accent); }
+
+  /* Borders */
+  .c-border { border-color: var(--bg-border); }
+  .c-border-accent { border-color: var(--accent); }
+
+  /* Hover backgrounds */
+  .hover\:c-bg-card:hover { background-color: var(--bg-card); }
+  .hover\:c-bg-dark:hover { background-color: var(--bg-dark); }
+  .hover\:c-bg-accent:hover { background-color: var(--accent); }
+  .hover\:c-bg-accent-hover:hover { background-color: var(--accent-hover); }
+  .hover\:c-bg-accent-light:hover { background-color: var(--accent-light); }
+  .hover\:c-text:hover { color: var(--text-primary); }
+  .hover\:c-text-2:hover { color: var(--text-secondary); }
+  .hover\:c-border-accent:hover { border-color: var(--accent); }
+}
+
+/* Placeholder contrast */
 ::placeholder {
   color: var(--text-tertiary);
   opacity: 1;
@@ -123,6 +157,7 @@ textarea {
   background-color: var(--bg-input);
   border: 1px solid var(--bg-border);
   color: var(--text-primary);
+  border-radius: 0.5rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 

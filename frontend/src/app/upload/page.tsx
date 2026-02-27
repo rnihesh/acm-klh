@@ -64,13 +64,13 @@ export default function UploadPage() {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* GST Returns Upload */}
-        <div className="bg-surface-card rounded-xl border border-surface-border p-6">
-          <h2 className="text-lg font-semibold text-content mb-4">
+        <div className="c-bg-card rounded-xl border c-border p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+          <h2 className="text-lg font-semibold c-text mb-4">
             GST Returns
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-content-secondary block mb-1">
+              <label className="text-sm c-text-2 block mb-1">
                 Return Type
               </label>
               <select
@@ -85,7 +85,7 @@ export default function UploadPage() {
               </select>
             </div>
             <div>
-              <label className="text-sm text-content-secondary block mb-1">
+              <label className="text-sm c-text-2 block mb-1">
                 Return Period
               </label>
               <input
@@ -106,14 +106,14 @@ export default function UploadPage() {
               onClick={() => gstInputRef.current?.click()}
               className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all ${
                 dragOver === "gst"
-                  ? "border-accent bg-accent-light"
-                  : "border-surface-border hover:border-accent/40 hover:bg-surface-dark/50"
+                  ? "border-[#d97757] c-bg-accent-light"
+                  : "c-border hover:border-[#d97757]/40 hover:c-bg-dark"
               }`}
             >
               <FileUp
-                className={`w-8 h-8 mb-2 transition-colors ${dragOver === "gst" ? "text-accent" : "text-content-tertiary"}`}
+                className={`w-8 h-8 mb-2 transition-colors ${dragOver === "gst" ? "c-text-accent" : "c-text-3"}`}
               />
-              <span className="text-sm text-content-secondary">
+              <span className="text-sm c-text-2">
                 {dragOver === "gst"
                   ? "Drop files here"
                   : "Drag & drop CSV/JSON or click to upload"}
@@ -132,11 +132,11 @@ export default function UploadPage() {
         </div>
 
         {/* Taxpayer Upload */}
-        <div className="bg-surface-card rounded-xl border border-surface-border p-6">
-          <h2 className="text-lg font-semibold text-content mb-4">
+        <div className="c-bg-card rounded-xl border c-border p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
+          <h2 className="text-lg font-semibold c-text mb-4">
             Taxpayer Master
           </h2>
-          <p className="text-sm text-content-secondary mb-4">
+          <p className="text-sm c-text-2 mb-4">
             Upload taxpayer details (GSTIN, trade name, registration type,
             state)
           </p>
@@ -150,14 +150,14 @@ export default function UploadPage() {
             onClick={() => taxInputRef.current?.click()}
             className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all h-48 ${
               dragOver === "taxpayer"
-                ? "border-accent bg-accent-light"
-                : "border-surface-border hover:border-accent/40 hover:bg-surface-dark/50"
+                ? "border-[#d97757] c-bg-accent-light"
+                : "c-border hover:border-[#d97757]/40 hover:c-bg-dark"
             }`}
           >
             <FileUp
-              className={`w-8 h-8 mb-2 transition-colors ${dragOver === "taxpayer" ? "text-accent" : "text-content-tertiary"}`}
+              className={`w-8 h-8 mb-2 transition-colors ${dragOver === "taxpayer" ? "c-text-accent" : "c-text-3"}`}
             />
-            <span className="text-sm text-content-secondary">
+            <span className="text-sm c-text-2">
               {dragOver === "taxpayer"
                 ? "Drop files here"
                 : "Drag & drop CSV/JSON or click to upload"}
@@ -176,22 +176,22 @@ export default function UploadPage() {
 
       {/* Upload Progress */}
       {uploading && (
-        <div className="flex items-center gap-3 p-4 mb-4 bg-accent-light border border-accent/20 rounded-xl">
-          <div className="animate-spin rounded-full h-5 w-5 border-2 border-accent border-t-transparent" />
-          <span className="text-sm text-accent">Processing upload...</span>
+        <div className="flex items-center gap-3 p-4 mb-4 c-bg-accent-light border border-[#d97757]/20 rounded-xl">
+          <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#d97757] border-t-transparent" />
+          <span className="text-sm c-text-accent">Processing upload...</span>
         </div>
       )}
 
       {/* Upload History */}
       {results.length > 0 && (
-        <div className="bg-surface-card rounded-xl border border-surface-border p-6">
+        <div className="c-bg-card rounded-xl border c-border p-6" style={{ boxShadow: "var(--shadow-sm)" }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-content">
+            <h2 className="text-lg font-semibold c-text">
               Upload Results
             </h2>
             <button
               onClick={() => setResults([])}
-              className="text-xs text-content-tertiary hover:text-content-secondary"
+              className="text-xs c-text-3 hover:c-text-2"
             >
               Clear
             </button>
@@ -211,7 +211,7 @@ export default function UploadPage() {
                 ) : (
                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                 )}
-                <span className="text-sm text-content-secondary">
+                <span className="text-sm c-text-2">
                   {r.status === "success"
                     ? `Ingested ${r.records_ingested ?? r.taxpayers_ingested ?? 0} records${r.return_type ? ` (${r.return_type})` : ""}`
                     : r.error || "Upload failed"}

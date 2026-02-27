@@ -120,7 +120,7 @@ export default function ReconcilePage() {
         <button
           onClick={runReconciliation}
           disabled={running}
-          className="flex items-center gap-2 px-5 py-2 bg-accent hover:bg-accent-hover disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
+          className="flex items-center gap-2 px-5 py-2 c-bg-accent hover:c-bg-accent-hover disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
         >
           {running ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -151,8 +151,8 @@ export default function ReconcilePage() {
               }}
               className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
                 filterType === type
-                  ? "bg-accent text-white"
-                  : "bg-surface-dark text-content-secondary hover:bg-surface-card"
+                  ? "c-bg-accent text-white"
+                  : "c-bg-dark c-text-2 hover:c-bg-card"
               }`}
             >
               {type}: {count as number}
@@ -202,24 +202,24 @@ export default function ReconcilePage() {
         <TableSkeleton rows={8} />
       ) : results.length > 0 ? (
         <>
-          <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
+          <div className="c-bg-card rounded-xl border c-border overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-surface-border bg-surface-dark/50">
-                  <th className="text-left px-4 py-3 text-content-secondary font-medium w-8" />
-                  <th className="text-left px-4 py-3 text-content-secondary font-medium">
+                <tr className="border-b c-border c-bg-dark">
+                  <th className="text-left px-4 py-3 c-text-2 font-medium w-8" />
+                  <th className="text-left px-4 py-3 c-text-2 font-medium">
                     Type
                   </th>
-                  <th className="text-left px-4 py-3 text-content-secondary font-medium">
+                  <th className="text-left px-4 py-3 c-text-2 font-medium">
                     Severity
                   </th>
-                  <th className="text-left px-4 py-3 text-content-secondary font-medium">
+                  <th className="text-left px-4 py-3 c-text-2 font-medium">
                     Invoice
                   </th>
-                  <th className="text-left px-4 py-3 text-content-secondary font-medium">
+                  <th className="text-left px-4 py-3 c-text-2 font-medium">
                     Supplier GSTIN
                   </th>
-                  <th className="text-right px-4 py-3 text-content-secondary font-medium">
+                  <th className="text-right px-4 py-3 c-text-2 font-medium">
                     Difference
                   </th>
                 </tr>
@@ -232,17 +232,17 @@ export default function ReconcilePage() {
                       onClick={() =>
                         setExpandedId(expandedId === r.id ? null : r.id)
                       }
-                      className="border-b border-surface-border/60 hover:bg-surface-dark/30 cursor-pointer transition-colors"
+                      className="border-b c-border hover:c-bg-dark cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-3">
                         {expandedId === r.id ? (
-                          <ChevronUp className="w-4 h-4 text-content-tertiary" />
+                          <ChevronUp className="w-4 h-4 c-text-3" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-content-tertiary" />
+                          <ChevronDown className="w-4 h-4 c-text-3" />
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-content-secondary">
+                        <span className="font-mono text-xs c-text-2">
                           {r.mismatch_type}
                         </span>
                       </td>
@@ -253,41 +253,41 @@ export default function ReconcilePage() {
                           {r.severity}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-content-secondary font-mono text-xs">
+                      <td className="px-4 py-3 c-text-2 font-mono text-xs">
                         {r.invoice_number}
                       </td>
-                      <td className="px-4 py-3 text-content-secondary font-mono text-xs">
+                      <td className="px-4 py-3 c-text-2 font-mono text-xs">
                         {r.supplier_gstin}
                       </td>
-                      <td className="px-4 py-3 text-right text-content font-medium">
+                      <td className="px-4 py-3 text-right c-text font-medium">
                         {formatCurrency(r.amount_difference)}
                       </td>
                     </tr>
                     {expandedId === r.id && (
-                      <tr key={`${r.id}-detail`} className="border-b border-surface-border/60">
-                        <td colSpan={6} className="px-4 py-4 bg-surface-dark/20">
+                      <tr key={`${r.id}-detail`} className="border-b c-border">
+                        <td colSpan={6} className="px-4 py-4 c-bg-dark">
                           <div className="space-y-3">
-                            <p className="text-sm text-content-secondary">
+                            <p className="text-sm c-text-2">
                               {r.description}
                             </p>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                               <div>
-                                <span className="text-content-tertiary">Buyer GSTIN</span>
-                                <p className="text-content-secondary font-mono mt-0.5">
+                                <span className="c-text-3">Buyer GSTIN</span>
+                                <p className="c-text-2 font-mono mt-0.5">
                                   {r.buyer_gstin || "N/A"}
                                 </p>
                               </div>
                               {r.field_name && (
                                 <div>
-                                  <span className="text-content-tertiary">Field</span>
-                                  <p className="text-content-secondary font-mono mt-0.5">
+                                  <span className="c-text-3">Field</span>
+                                  <p className="c-text-2 font-mono mt-0.5">
                                     {r.field_name}
                                   </p>
                                 </div>
                               )}
                               {r.expected_value && (
                                 <div>
-                                  <span className="text-content-tertiary">Expected</span>
+                                  <span className="c-text-3">Expected</span>
                                   <p className="text-emerald-400 font-mono mt-0.5">
                                     {r.expected_value}
                                   </p>
@@ -295,7 +295,7 @@ export default function ReconcilePage() {
                               )}
                               {r.actual_value && (
                                 <div>
-                                  <span className="text-content-tertiary">Actual</span>
+                                  <span className="c-text-3">Actual</span>
                                   <p className="text-red-400 font-mono mt-0.5">
                                     {r.actual_value}
                                   </p>
@@ -303,16 +303,16 @@ export default function ReconcilePage() {
                               )}
                             </div>
                             {/* AI Audit Button */}
-                            <div className="pt-2 border-t border-surface-border">
+                            <div className="pt-2 border-t c-border">
                               {auditResults[r.id] ? (
-                                <div className="bg-accent-subtle border border-accent/10 rounded-lg p-3">
+                                <div className="c-bg-accent-subtle border border-[#d97757]/10 rounded-lg p-3">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <Bot className="w-4 h-4 text-accent" />
-                                    <span className="text-xs font-medium text-accent">
+                                    <Bot className="w-4 h-4 c-text-accent" />
+                                    <span className="text-xs font-medium c-text-accent">
                                       AI Audit Explanation
                                     </span>
                                   </div>
-                                  <p className="text-sm text-content-secondary leading-relaxed whitespace-pre-wrap">
+                                  <p className="text-sm c-text-2 leading-relaxed whitespace-pre-wrap">
                                     {auditResults[r.id]}
                                   </p>
                                 </div>
@@ -323,7 +323,7 @@ export default function ReconcilePage() {
                                     handleAudit(r);
                                   }}
                                   disabled={auditLoading === r.id}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-accent-light hover:bg-accent-subtle rounded-lg text-accent text-xs transition-colors disabled:opacity-50"
+                                  className="flex items-center gap-2 px-3 py-1.5 c-bg-accent-light hover:c-bg-accent-light rounded-lg c-text-accent text-xs transition-colors disabled:opacity-50"
                                 >
                                   {auditLoading === r.id ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -346,24 +346,24 @@ export default function ReconcilePage() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
-            <span className="text-sm text-content-secondary">
+            <span className="text-sm c-text-2">
               {total} results total
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => fetchResults(page - 1)}
                 disabled={page <= 1}
-                className="p-2 bg-surface-dark rounded-lg disabled:opacity-30 text-content-secondary hover:text-content transition-colors"
+                className="p-2 c-bg-dark rounded-lg disabled:opacity-30 c-text-2 hover:c-text transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm text-content-secondary min-w-[100px] text-center">
+              <span className="text-sm c-text-2 min-w-[100px] text-center">
                 Page {page} of {Math.max(1, Math.ceil(total / 50))}
               </span>
               <button
                 onClick={() => fetchResults(page + 1)}
                 disabled={page >= Math.ceil(total / 50)}
-                className="p-2 bg-surface-dark rounded-lg disabled:opacity-30 text-content-secondary hover:text-content transition-colors"
+                className="p-2 c-bg-dark rounded-lg disabled:opacity-30 c-text-2 hover:c-text transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -371,8 +371,8 @@ export default function ReconcilePage() {
           </div>
         </>
       ) : status ? (
-        <div className="bg-surface-card rounded-xl border border-surface-border p-12 text-center">
-          <p className="text-content-tertiary">
+        <div className="c-bg-card rounded-xl border c-border p-12 text-center">
+          <p className="c-text-3">
             No mismatches found for period {period}.
           </p>
         </div>

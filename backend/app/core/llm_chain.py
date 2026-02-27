@@ -5,21 +5,33 @@ from app.config import get_settings
 async def generate_text(prompt: str, system_prompt: str = "") -> str:
     settings = get_settings()
     providers = settings.llm_priority.split(",")
+    errors: list[str] = []
 
     for provider in providers:
         provider = provider.strip()
         try:
-            if provider == "openai" and settings.openai_api_key:
+            if provider == "openai":
+                if not settings.openai_api_key:
+                    errors.append(f"openai: no API key configured")
+                    continue
+                print(f"Trying LLM provider: openai")
                 return await _call_openai(prompt, system_prompt, settings.openai_api_key)
-            elif provider == "gemini" and settings.gemini_api_key:
+            elif provider == "gemini":
+                if not settings.gemini_api_key or settings.gemini_api_key.startswith("your-"):
+                    errors.append(f"gemini: no valid API key configured")
+                    continue
+                print(f"Trying LLM provider: gemini")
                 return await _call_gemini(prompt, system_prompt, settings.gemini_api_key)
             elif provider == "ollama":
+                print(f"Trying LLM provider: ollama ({settings.ollama_url})")
                 return await _call_ollama(prompt, system_prompt, settings.ollama_url)
         except Exception as e:
+            errors.append(f"{provider}: {e}")
             print(f"LLM provider {provider} failed: {e}")
             continue
 
-    return "Unable to generate explanation — no LLM provider available."
+    error_detail = "; ".join(errors) if errors else "no providers configured"
+    return f"Unable to generate explanation — all LLM providers failed. ({error_detail})"
 
 
 async def _call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
@@ -61,7 +73,7 @@ async def _call_ollama(prompt: str, system_prompt: str, ollama_url: str) -> str:
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
             f"{ollama_url}/api/chat",
-            json={"model": "llama3.1", "messages": messages, "stream": False},
+            json={"model": "qwen2.5-coder:32b", "messages": messages, "stream": False},
         )
         response.raise_for_status()
         return response.json()["message"]["content"]

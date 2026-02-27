@@ -1,5 +1,10 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+_backend_dir = Path(__file__).resolve().parent.parent
+_env_paths = [_backend_dir / ".env", _backend_dir.parent / ".env"]
+_env_file = next((p for p in _env_paths if p.exists()), ".env")
 
 
 class Settings(BaseSettings):
@@ -11,7 +16,7 @@ class Settings(BaseSettings):
     # LLM Keys
     openai_api_key: str = ""
     gemini_api_key: str = ""
-    ollama_url: str = "http://localhost:11434"
+    ollama_url: str = "http://165.245.128.29:11434"
     llm_priority: str = "openai,gemini,ollama"
 
     # App
@@ -19,8 +24,9 @@ class Settings(BaseSettings):
     debug: bool = True
 
     class Config:
-        env_file = ".env"
+        env_file = str(_env_file)
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 @lru_cache
