@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Hexagon, Loader2 } from "lucide-react";
+import { Hexagon, Loader2, Sun, Moon, ArrowLeft } from "lucide-react";
 import { register } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { loginUser } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +33,18 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen c-bg-main flex items-center justify-center p-4">
+    <div className="min-h-screen c-bg-main flex items-center justify-center p-4 relative">
+      {/* Top bar */}
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 sm:px-6 h-14">
+        <Link href="/login" className="flex items-center gap-1.5 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back
+        </Link>
+        <button onClick={toggleTheme} className="p-2 rounded-lg" style={{ color: "var(--text-secondary)" }} aria-label="Toggle theme">
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+      </div>
+
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
@@ -39,7 +52,7 @@ export default function RegisterPage() {
             className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
             style={{ backgroundColor: "var(--accent)" }}
           >
-            <Hexagon className="w-5 h-5 text-white" strokeWidth={2.5} />
+            <Hexagon className="w-5 h-5" style={{ color: "var(--accent-text)" }} strokeWidth={2.5} />
           </div>
           <div>
             <span className="text-lg font-bold tracking-tight c-text">

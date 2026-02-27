@@ -67,7 +67,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
               style={{ backgroundColor: "var(--accent)" }}
             >
-              <Hexagon className="w-4.5 h-4.5 text-white" strokeWidth={2.5} />
+              <Hexagon className="w-4.5 h-4.5" style={{ color: "var(--accent-text)" }} strokeWidth={2.5} />
             </div>
             <div>
               <span className="text-sm font-bold tracking-tight" style={{ color: "var(--text-primary)" }}>
