@@ -106,7 +106,55 @@ Next.js Frontend (Tauri Desktop App)
       ├─ Audit Trail Viewer
       └─ Integrations Hub
 ```
-
+``` mermaid
+graph TD
+    %% Users
+    User((Tax Officer / Auditor))
+    
+    %% Frontend Layer
+    subgraph Frontend [Presentation Layer - Next.js]
+        UI[UI Components & Dashboards]
+        Viz[react-force-graph-2d]
+        Chat[Chatbot Interface]
+    end
+    
+    %% Backend Layer
+    subgraph Backend [Application Layer - FastAPI]
+        API[REST APIs]
+        Ingest[Data Ingestion Engine]
+        Recon[Graph Recon Engine]
+        Risk[Risk & Compliance Model]
+        RAG[RAG Context Builder]
+    end
+    
+    %% Database Layer
+    subgraph Data [Data Layer]
+        Neo4j[(Neo4j Knowledge Graph)]
+    end
+    
+    %% External Services
+    subgraph External [External Services]
+        LLM[LLM Fallback Chain<br/>OpenAI / Gemini / Ollama]
+    end
+    
+    %% Relationships
+    User <-->|HTTPS| UI
+    UI <-->|JSON/REST| API
+    Viz <-->|Node/Edge Data| API
+    Chat <-->|Chat Context| RAG
+    
+    API --> Ingest
+    API --> Recon
+    API --> Risk
+    
+    Ingest -->|Cypher Queries| Neo4j
+    Recon <-->|Graph Traversal| Neo4j
+    Risk <-->|Cycle Detection| Neo4j
+    RAG <-->|Fetch Subgraph Context| Neo4j
+    
+    Recon --> RAG
+    RAG <-->|Prompts / Responses| LLM
+```
 Frontend communicates with the backend via REST API. In production, Nginx reverse-proxies `gst.niheshr.com` → Next.js and `gst-api.niheshr.com` → FastAPI.
 
 ---
