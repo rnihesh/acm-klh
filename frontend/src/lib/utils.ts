@@ -22,9 +22,9 @@ export function severityColor(severity: string): string {
     case "CRITICAL":
       return "text-red-400 bg-red-500/10";
     case "HIGH":
-      return "text-orange-400 bg-orange-500/10";
+      return "text-amber-400 bg-amber-500/10";
     case "MEDIUM":
-      return "text-[#d97757] bg-[#d97757]/10";
+      return "text-gray-400 bg-gray-500/10";
     case "LOW":
       return "text-emerald-400 bg-emerald-500/10";
     default:
@@ -37,9 +37,9 @@ export function riskColor(risk: string): string {
     case "CRITICAL":
       return "text-red-400 border-red-500/30 bg-red-500/10";
     case "HIGH":
-      return "text-orange-400 border-orange-500/30 bg-orange-500/10";
+      return "text-amber-400 border-amber-500/30 bg-amber-500/10";
     case "MEDIUM":
-      return "text-[#d97757] border-[#d97757]/30 bg-[#d97757]/10";
+      return "text-gray-400 border-gray-500/30 bg-gray-500/10";
     case "LOW":
       return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
     default:

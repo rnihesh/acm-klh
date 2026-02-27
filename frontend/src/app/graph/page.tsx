@@ -57,21 +57,21 @@ interface CircularTrade {
 
 /* ── Constants ── */
 const NODE_COLORS: Record<string, string> = {
-  Taxpayer: "#d97757",
-  Invoice: "#5cb85c",
-  GSTR1Return: "#f0ad4e",
-  GSTR2BReturn: "#9b8ec3",
-  GSTR3BReturn: "#d9534f",
-  User: "#6b6b6b",
+  Taxpayer: "#ffffff",
+  Invoice: "#888888",
+  GSTR1Return: "#c0c0c0",
+  GSTR2BReturn: "#a0a0a0",
+  GSTR3BReturn: "#707070",
+  User: "#505050",
 };
 
 const NODE_SIZES: Record<string, number> = {
-  Taxpayer: 10,
-  Invoice: 4,
-  GSTR1Return: 6,
-  GSTR2BReturn: 6,
-  GSTR3BReturn: 6,
-  User: 4,
+  Taxpayer: 14,
+  Invoice: 6,
+  GSTR1Return: 8,
+  GSTR2BReturn: 8,
+  GSTR3BReturn: 8,
+  User: 5,
 };
 
 const LINK_LABELS: Record<string, string> = {
@@ -604,11 +604,11 @@ export default function GraphPage() {
       ctx.moveTo(l.source.x!, l.source.y!);
       ctx.lineTo(l.target.x!, l.target.y!);
       ctx.strokeStyle = isHighlighted
-        ? "rgba(217, 119, 87, 0.65)"
+        ? "rgba(255, 255, 255, 0.6)"
         : dimmed
           ? "rgba(100, 100, 100, 0.02)"
-          : "rgba(100, 100, 100, 0.08)";
-      ctx.lineWidth = isHighlighted ? 1.8 : 0.4;
+          : "rgba(160, 160, 160, 0.15)";
+      ctx.lineWidth = isHighlighted ? 2 : 0.5;
       ctx.stroke();
 
       /* Arrow */
@@ -632,7 +632,7 @@ export default function GraphPage() {
         );
         ctx.closePath();
         ctx.fillStyle = isHighlighted
-          ? "rgba(217, 119, 87, 0.65)"
+          ? "rgba(255, 255, 255, 0.6)"
           : "rgba(100, 100, 100, 0.2)";
         ctx.fill();
       }
@@ -645,7 +645,7 @@ export default function GraphPage() {
         ctx.font = `${fontSize}px Inter, system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = "rgba(217, 119, 87, 0.9)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
         ctx.fillText(LINK_LABELS[l.type], mx, my - 3 / globalScale);
       }
     },
@@ -731,10 +731,10 @@ export default function GraphPage() {
             }
           }}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all border ${hubMode
-            ? "text-white border-transparent"
+            ? "border-transparent"
             : "c-bg-dark c-text-2 c-border hover:c-bg-card"
             }`}
-          style={hubMode ? { backgroundColor: "var(--accent)" } : undefined}
+          style={hubMode ? { backgroundColor: "var(--accent)", color: "var(--accent-text)" } : undefined}
         >
           <Focus className="w-4 h-4" />
           Hub View
@@ -896,8 +896,8 @@ export default function GraphPage() {
                           <span
                             className="text-[11px] px-2 py-0.5 rounded-full"
                             style={{
-                              backgroundColor: "#d9775718",
-                              color: "#d97757",
+                              backgroundColor: "rgba(160,160,160,0.12)",
+                              color: "var(--text-secondary)",
                             }}
                           >
                             {row.relType.replace(/_/g, " ").toLowerCase()}
@@ -967,7 +967,7 @@ export default function GraphPage() {
 
             {loading ? (
               <div className="flex flex-col items-center justify-center h-[450px] md:h-[640px] gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#d97757] border-t-transparent" />
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent" style={{ borderColor: "var(--text-secondary)", borderTopColor: "transparent" }} />
                 <span className="text-xs c-text-3">
                   Loading graph data…
                 </span>

@@ -66,11 +66,11 @@ interface RiskyVendor {
   filing_rate: number;
 }
 
-const CHART_COLORS = ["#d97757", "#d9534f", "#5bc0de", "#5cb85c", "#f0ad4e", "#9b8ec3"];
+const CHART_COLORS = ["#e5e5e5", "#a3a3a3", "#737373", "#d4d4d4", "#525252", "#8b8b8b"];
 const SEVERITY_COLORS: Record<string, string> = {
   CRITICAL: "#d9534f",
   HIGH: "#f0ad4e",
-  MEDIUM: "#d97757",
+  MEDIUM: "#a3a3a3",
   LOW: "#5cb85c",
 };
 
@@ -144,12 +144,12 @@ export default function Dashboard() {
           {/* Stat Cards with staggered fade-in */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
             {[
-              { icon: Building2, label: "Taxpayers", value: formatNumber(stats?.total_taxpayers ?? 0), color: "#d97757", desc: "Total registered taxpayers" },
-              { icon: FileText, label: "Invoices", value: formatNumber(stats?.total_invoices ?? 0), color: "#5cb85c", desc: "Total invoices processed" },
-              { icon: TrendingUp, label: "Txn Value", value: formatCurrency(stats?.total_transaction_value ?? 0), color: "#5bc0de", desc: "Total transaction value" },
-              { icon: AlertTriangle, label: "Mismatches", value: formatNumber(stats?.total_mismatches ?? 0), color: "#d9534f", desc: "Total mismatches detected" },
-              { icon: IndianRupee, label: "ITC at Risk", value: formatCurrency(stats?.total_itc_at_risk ?? 0), color: "#f0ad4e", desc: "Input Tax Credit at risk" },
-              { icon: ShieldAlert, label: "High Risk", value: formatNumber(stats?.high_risk_vendors ?? 0), color: "#9b8ec3", desc: "High risk vendor count" },
+              { icon: Building2, label: "Taxpayers", value: formatNumber(stats?.total_taxpayers ?? 0), color: "#e5e5e5", desc: "Total registered taxpayers" },
+              { icon: FileText, label: "Invoices", value: formatNumber(stats?.total_invoices ?? 0), color: "#a3a3a3", desc: "Total invoices processed" },
+              { icon: TrendingUp, label: "Txn Value", value: formatCurrency(stats?.total_transaction_value ?? 0), color: "#737373", desc: "Total transaction value" },
+              { icon: AlertTriangle, label: "Mismatches", value: formatNumber(stats?.total_mismatches ?? 0), color: "#d4d4d4", desc: "Total mismatches detected" },
+              { icon: IndianRupee, label: "ITC at Risk", value: formatCurrency(stats?.total_itc_at_risk ?? 0), color: "#525252", desc: "Input Tax Credit at risk" },
+              { icon: ShieldAlert, label: "High Risk", value: formatNumber(stats?.high_risk_vendors ?? 0), color: "#8b8b8b", desc: "High risk vendor count" },
             ].map((card, i) => (
               <div
                 key={card.label}
@@ -169,8 +169,8 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-2 mb-6">
             <Link
               href="/reconcile"
-              className="flex items-center gap-2 px-4 py-2 c-bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: "var(--accent)" }}
+              className="flex items-center gap-2 px-4 py-2 c-bg-accent rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: "var(--accent)", color: "var(--accent-text)" }}
             >
               <Play className="w-3.5 h-3.5" /> Run Reconciliation
             </Link>
@@ -309,7 +309,7 @@ export default function Dashboard() {
                         <p className="text-[10px] c-text-3 font-mono mt-0.5">{v.gstin}</p>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">
-                        <p className={`text-sm font-bold ${rate > 50 ? "text-red-400" : rate > 25 ? "c-text-accent" : "text-emerald-400"}`}>{rate}%</p>
+                        <p className={`text-sm font-bold ${rate > 50 ? "text-red-400" : rate > 25 ? "text-amber-400" : "text-emerald-400"}`}>{rate}%</p>
                         <p className="text-[10px] c-text-3">{v.mismatch_count}/{v.total_invoices}</p>
                       </div>
                     </div>

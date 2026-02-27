@@ -159,9 +159,9 @@ export default function RiskPage() {
                         vendor.risk_score >= 75
                           ? "bg-red-500"
                           : vendor.risk_score >= 50
-                            ? "bg-orange-500"
+                            ? "bg-amber-500"
                             : vendor.risk_score >= 25
-                              ? "bg-[#d97757]"
+                              ? "bg-gray-400"
                               : "bg-emerald-500"
                       }`}
                       style={{ width: `${Math.min(100, vendor.risk_score)}%` }}

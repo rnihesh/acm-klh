@@ -142,12 +142,12 @@ export default function ChatPage() {
                   <div
                     className={`max-w-[80%] rounded-xl px-4 py-3 ${
                       msg.role === "user"
-                        ? "c-bg-accent text-white"
+                        ? "c-bg-accent"
                         : "c-bg-dark"
                     }`}
                     style={
                       msg.role === "user"
-                        ? { backgroundColor: "var(--accent)" }
+                        ? { backgroundColor: "var(--accent)", color: "var(--accent-text)" }
                         : undefined
                     }
                   >
@@ -161,7 +161,7 @@ export default function ChatPage() {
                     <p
                       className={`text-[10px] mt-1.5 ${
                         msg.role === "user"
-                          ? "text-white/60"
+                          ? "opacity-60"
                           : "c-text-3"
                       }`}
                     >
@@ -229,8 +229,8 @@ export default function ChatPage() {
             <button
               onClick={() => sendMessage(input)}
               disabled={!input.trim() || loading}
-              className="flex items-center justify-center w-10 h-10 rounded-lg text-white transition-all disabled:opacity-40"
-              style={{ backgroundColor: "var(--accent)" }}
+              className="flex items-center justify-center w-10 h-10 rounded-lg transition-all disabled:opacity-40"
+              style={{ backgroundColor: "var(--accent)", color: "var(--accent-text)" }}
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

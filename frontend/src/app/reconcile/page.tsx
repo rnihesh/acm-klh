@@ -233,8 +233,8 @@ export default function ReconcilePage() {
         <button
           onClick={runReconciliation}
           disabled={running}
-          className="flex items-center gap-2 px-5 py-2 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          style={{ backgroundColor: "var(--accent)" }}
+          className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          style={{ backgroundColor: "var(--accent)", color: "var(--accent-text)" }}
         >
           {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
           {running ? "Running..." : "Run Reconciliation"}
@@ -268,9 +268,9 @@ export default function ReconcilePage() {
                 setPage(1);
               }}
               className={`px-3 py-1.5 rounded-full text-xs font-mono transition-all ${
-                filterType === type ? "text-white" : "c-bg-dark c-text-2 hover:c-bg-card"
+                filterType === type ? "" : "c-bg-dark c-text-2 hover:c-bg-card"
               }`}
-              style={filterType === type ? { backgroundColor: "var(--accent)" } : undefined}
+              style={filterType === type ? { backgroundColor: "var(--accent)", color: "var(--accent-text)" } : undefined}
             >
               {type}: {count as number}
             </button>
@@ -375,7 +375,7 @@ export default function ReconcilePage() {
                         </td>
                         <td className="px-4 py-3 c-text-2 font-mono text-xs">{r.invoice_number}</td>
                         <td className="px-4 py-3 c-text-2 font-mono text-xs">{r.supplier_gstin}</td>
-                        <td className={`px-4 py-3 text-right font-medium font-mono text-sm ${r.amount_difference > 10000 ? "text-red-400" : r.amount_difference > 5000 ? "c-text-accent" : "c-text"}`}>
+                        <td className={`px-4 py-3 text-right font-medium font-mono text-sm ${r.amount_difference > 10000 ? "text-red-400" : r.amount_difference > 5000 ? "text-amber-400" : "c-text"}`}>
                           {formatCurrency(r.amount_difference)}
                         </td>
                       </tr>
@@ -411,7 +411,7 @@ export default function ReconcilePage() {
                               {/* AI Audit Button */}
                               <div className="pt-2 border-t c-border">
                                 {auditResults[r.id] ? (
-                                  <div className="c-bg-accent-subtle border border-[#d97757]/10 rounded-lg p-3">
+                                  <div className="c-bg-accent-subtle border rounded-lg p-3" style={{ borderColor: "var(--bg-border)" }}>
                                     <div className="flex items-center gap-2 mb-2">
                                       <Bot className="w-4 h-4 c-text-accent" />
                                       <span className="text-xs font-medium c-text-accent">AI Audit Explanation</span>
@@ -462,9 +462,9 @@ export default function ReconcilePage() {
                   key={p}
                   onClick={() => setPage(p)}
                   className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                    p === page ? "text-white" : "c-bg-dark c-text-2 hover:c-text"
+                    p === page ? "" : "c-bg-dark c-text-2 hover:c-text"
                   }`}
-                  style={p === page ? { backgroundColor: "var(--accent)" } : undefined}
+                  style={p === page ? { backgroundColor: "var(--accent)", color: "var(--accent-text)" } : undefined}
                 >
                   {p}
                 </button>

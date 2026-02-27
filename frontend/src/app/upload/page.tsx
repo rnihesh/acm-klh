@@ -121,8 +121,8 @@ export default function UploadPage() {
               onClick={() => gstInputRef.current?.click()}
               className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all ${
                 dragOver === "gst"
-                  ? "border-[#d97757] c-bg-accent-light"
-                  : "c-border hover:border-[#d97757]/40 hover:c-bg-dark"
+                  ? "border-white/60 c-bg-accent-light"
+                  : "c-border hover:border-white/60/40 hover:c-bg-dark"
               }`}
             >
               <FileUp
@@ -164,8 +164,8 @@ export default function UploadPage() {
                     setStagedGst([]);
                   }}
                   disabled={uploading}
-                  className="w-full py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: "var(--accent)" }}
+                  className="w-full py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: "var(--accent)", color: "var(--accent-text)" }}
                 >
                   Upload {stagedGst.length} file{stagedGst.length > 1 ? "s" : ""}
                 </button>
@@ -193,8 +193,8 @@ export default function UploadPage() {
             onClick={() => taxInputRef.current?.click()}
             className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all h-48 ${
               dragOver === "taxpayer"
-                ? "border-[#d97757] c-bg-accent-light"
-                : "c-border hover:border-[#d97757]/40 hover:c-bg-dark"
+                ? "border-white/60 c-bg-accent-light"
+                : "c-border hover:border-white/60/40 hover:c-bg-dark"
             }`}
           >
             <FileUp
@@ -235,8 +235,8 @@ export default function UploadPage() {
                   setStagedTax([]);
                 }}
                 disabled={uploading}
-                className="w-full py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
-                style={{ backgroundColor: "var(--accent)" }}
+                className="w-full py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ backgroundColor: "var(--accent)", color: "var(--accent-text)" }}
               >
                 Upload {stagedTax.length} file{stagedTax.length > 1 ? "s" : ""}
               </button>
@@ -247,8 +247,8 @@ export default function UploadPage() {
 
       {/* Upload Progress */}
       {uploading && (
-        <div className="flex items-center gap-3 p-4 mb-4 c-bg-accent-light border border-[#d97757]/20 rounded-xl">
-          <div className="animate-spin rounded-full h-5 w-5 border-2 border-[#d97757] border-t-transparent" />
+        <div className="flex items-center gap-3 p-4 mb-4 c-bg-accent-light border rounded-xl" style={{ borderColor: "var(--bg-border)" }}>
+          <div className="animate-spin rounded-full h-5 w-5 border-2 border-t-transparent" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
           <span className="text-sm c-text-accent">Processing upload...</span>
         </div>
       )}
