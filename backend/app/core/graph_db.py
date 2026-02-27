@@ -221,11 +221,15 @@ def get_graph_data(limit: int = 200):
         )
         links = []
         for r in edge_result:
-            links.append({
+            link = {
                 "source": r["source"],
                 "target": r["target"],
                 "type": r["type"],
-            })
+            }
+            # Include relationship properties (e.g. volume, frequency for TRADES_WITH)
+            if r["properties"]:
+                link.update(r["properties"])
+            links.append(link)
 
         # Also add target nodes that might be outside the original limit
         missing_ids = set()
