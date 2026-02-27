@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Hexagon, Loader2, Sun, Moon, ArrowLeft } from "lucide-react";
+import { Loader2, Sun, Moon, ArrowLeft } from "lucide-react";
 import { register } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -48,12 +48,11 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
-            <Hexagon className="w-5 h-5" style={{ color: "var(--accent-text)" }} strokeWidth={2.5} />
-          </div>
+          <img
+            src="/gst-recon.png"
+            alt="GST Recon"
+            className="w-10 h-10 rounded-xl shadow-md"
+          />
           <div>
             <span className="text-lg font-bold tracking-tight c-text">
               GST Recon
