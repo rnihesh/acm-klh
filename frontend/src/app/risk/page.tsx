@@ -223,7 +223,7 @@ export default function RiskPage() {
                   AI Risk Summary
                 </button>
                 <Link
-                  href={`/risk/${vendor.gstin}`}
+                  href={`/risk/vendor?gstin=${vendor.gstin}`}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 c-bg-dark hover:c-bg-card rounded-lg c-text-2 text-xs transition-colors mt-2"
                 >
                   <ShieldAlert className="w-3 h-3" />
