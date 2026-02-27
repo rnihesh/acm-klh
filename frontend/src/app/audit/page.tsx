@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import PageShell from "@/components/PageShell";
 import { CardSkeleton } from "@/components/Skeleton";
-import { getAuditTrails } from "@/lib/api";
-import { ChevronDown, ChevronRight, FileSearch, Copy, Check } from "lucide-react";
+import { getAuditTrails, downloadPDF } from "@/lib/api";
+import { ChevronDown, ChevronRight, FileSearch, Copy, Check, Download, Loader2 } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface AuditTrail {
@@ -28,6 +28,7 @@ export default function AuditPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     getAuditTrails()
@@ -56,6 +57,21 @@ export default function AuditPage() {
         </div>
       ) : trails.length > 0 ? (
         <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm c-text-2">{trails.length} audit trail{trails.length !== 1 ? "s" : ""} generated</p>
+            <button
+              onClick={async () => {
+                setPdfLoading(true);
+                try { await downloadPDF("012026"); } catch {}
+                setPdfLoading(false);
+              }}
+              disabled={pdfLoading}
+              className="flex items-center gap-2 px-4 py-2 c-bg-dark hover:c-bg-card rounded-lg text-sm c-text-2 transition-colors disabled:opacity-40 border c-border"
+            >
+              {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              Export All as PDF
+            </button>
+          </div>
           {trails.map((trail) => (
             <div
               key={trail.id}

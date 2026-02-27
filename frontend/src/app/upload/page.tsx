@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import PageShell from "@/components/PageShell";
 import { uploadFile, uploadTaxpayers } from "@/lib/api";
-import { FileUp, CheckCircle2, XCircle } from "lucide-react";
+import { FileUp, CheckCircle2, XCircle, File, Trash2 } from "lucide-react";
 
 type UploadResult = {
   status: string;
@@ -19,8 +19,23 @@ export default function UploadPage() {
   const [results, setResults] = useState<UploadResult[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState<"gst" | "taxpayer" | null>(null);
+  const [stagedGst, setStagedGst] = useState<File[]>([]);
+  const [stagedTax, setStagedTax] = useState<File[]>([]);
   const gstInputRef = useRef<HTMLInputElement>(null);
   const taxInputRef = useRef<HTMLInputElement>(null);
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const stageFiles = (files: FileList | null, isTaxpayer: boolean) => {
+    if (!files?.length) return;
+    const arr = Array.from(files);
+    if (isTaxpayer) setStagedTax((prev) => [...prev, ...arr]);
+    else setStagedGst((prev) => [...prev, ...arr]);
+  };
 
   const handleUpload = useCallback(
     async (files: FileList | null, isTaxpayer = false) => {
@@ -52,9 +67,9 @@ export default function UploadPage() {
     (e: React.DragEvent, isTaxpayer: boolean) => {
       e.preventDefault();
       setDragOver(null);
-      handleUpload(e.dataTransfer.files, isTaxpayer);
+      stageFiles(e.dataTransfer.files, isTaxpayer);
     },
-    [handleUpload]
+    []
   );
 
   return (
@@ -124,10 +139,38 @@ export default function UploadPage() {
                 accept=".json,.csv"
                 multiple
                 className="hidden"
-                onChange={(e) => handleUpload(e.target.files)}
+                onChange={(e) => stageFiles(e.target.files, false)}
                 disabled={uploading}
               />
             </div>
+            {/* GST File Preview */}
+            {stagedGst.length > 0 && (
+              <div className="space-y-2">
+                {stagedGst.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 px-3 py-2 c-bg-dark rounded-lg">
+                    <File className="w-4 h-4 c-text-accent flex-shrink-0" />
+                    <span className="text-sm c-text-2 truncate flex-1">{f.name}</span>
+                    <span className="text-xs c-text-3 flex-shrink-0">{formatFileSize(f.size)}</span>
+                    <button onClick={() => setStagedGst((p) => p.filter((_, j) => j !== i))} className="p-1 hover:c-bg-card rounded transition-colors">
+                      <Trash2 className="w-3 h-3 c-text-3" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={async () => {
+                    const dt = new DataTransfer();
+                    stagedGst.forEach((f) => dt.items.add(f));
+                    await handleUpload(dt.files, false);
+                    setStagedGst([]);
+                  }}
+                  disabled={uploading}
+                  className="w-full py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: "var(--accent)" }}
+                >
+                  Upload {stagedGst.length} file{stagedGst.length > 1 ? "s" : ""}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -167,10 +210,38 @@ export default function UploadPage() {
               type="file"
               accept=".json,.csv"
               className="hidden"
-              onChange={(e) => handleUpload(e.target.files, true)}
+              onChange={(e) => stageFiles(e.target.files, true)}
               disabled={uploading}
             />
           </div>
+          {/* Taxpayer File Preview */}
+          {stagedTax.length > 0 && (
+            <div className="space-y-2">
+              {stagedTax.map((f, i) => (
+                <div key={i} className="flex items-center gap-2 px-3 py-2 c-bg-dark rounded-lg">
+                  <File className="w-4 h-4 c-text-accent flex-shrink-0" />
+                  <span className="text-sm c-text-2 truncate flex-1">{f.name}</span>
+                  <span className="text-xs c-text-3 flex-shrink-0">{formatFileSize(f.size)}</span>
+                  <button onClick={() => setStagedTax((p) => p.filter((_, j) => j !== i))} className="p-1 hover:c-bg-card rounded transition-colors">
+                    <Trash2 className="w-3 h-3 c-text-3" />
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={async () => {
+                  const dt = new DataTransfer();
+                  stagedTax.forEach((f) => dt.items.add(f));
+                  await handleUpload(dt.files, true);
+                  setStagedTax([]);
+                }}
+                disabled={uploading}
+                className="w-full py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
+                style={{ backgroundColor: "var(--accent)" }}
+              >
+                Upload {stagedTax.length} file{stagedTax.length > 1 ? "s" : ""}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.core.graph_db import create_constraints, close_driver
 from app.core.auth import create_user_constraint, seed_default_users
-from app.api import ingest, reconcile, audit, risk, stats, auth
+from app.api import ingest, reconcile, audit, risk, stats, auth, chat
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ app.include_router(reconcile.router, prefix="/api/reconcile", tags=["Reconciliat
 app.include_router(audit.router, prefix="/api/audit", tags=["Audit Trails"])
 app.include_router(risk.router, prefix="/api/risk", tags=["Vendor Risk"])
 app.include_router(stats.router, prefix="/api/stats", tags=["Dashboard Stats"])
+app.include_router(chat.router, prefix="/api/chat", tags=["RAG Chatbot"])
 
 
 @app.get("/api/health")

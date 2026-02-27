@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException, Body
 from app.core.reconciler import reconcile_all, reconcile_purchase_register
-from app.core.graph_db import get_graph_data, search_graph, find_circular_trades
+from app.core.graph_db import get_graph_data, search_graph, find_circular_trades, get_taxpayer_network
 from pydantic import BaseModel
 from typing import Optional
 
@@ -96,6 +96,17 @@ async def get_circular_trades():
         return find_circular_trades()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Circular trade detection failed: {str(e)}")
+
+
+@router.get("/graph/taxpayer-network")
+async def get_taxpayer_network_endpoint(gstin: str):
+    """Get the subgraph centered on a specific taxpayer — for hub layout visualization."""
+    if not gstin or len(gstin) < 2:
+        raise HTTPException(status_code=400, detail="GSTIN is required")
+    try:
+        return get_taxpayer_network(gstin)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Taxpayer network fetch failed: {str(e)}")
 
 
 @router.post("/purchase-register")

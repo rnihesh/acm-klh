@@ -93,6 +93,8 @@ export const searchGraph = (query: string) =>
   fetchAPI(`/api/reconcile/graph/search?q=${encodeURIComponent(query)}`);
 export const getCircularTrades = () =>
   fetchAPI("/api/reconcile/graph/circular-trades");
+export const getTaxpayerNetwork = (gstin: string) =>
+  fetchAPI(`/api/reconcile/graph/taxpayer-network?gstin=${encodeURIComponent(gstin)}`);
 
 // Audit
 export const generateAuditTrail = (mismatch: Record<string, unknown>) =>
@@ -136,4 +138,33 @@ export const uploadTaxpayers = (file: File) => {
     body: formData,
     headers,
   }).then((r) => r.json());
+};
+
+// Chat
+export const sendChatMessage = (message: string, conversationId?: string) =>
+  fetchAPI<{ response: string; conversation_id: string }>("/api/chat/message", {
+    method: "POST",
+    body: JSON.stringify({ message, conversation_id: conversationId }),
+  });
+
+export const getChatSuggestions = () =>
+  fetchAPI<{ suggestions: string[] }>("/api/chat/suggestions");
+
+// PDF Download
+export const downloadPDF = async (returnPeriod = "012026") => {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(
+    `${API_BASE}/api/audit/report/pdf?return_period=${returnPeriod}`,
+    { headers }
+  );
+  if (!res.ok) throw new Error("PDF generation failed");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `GST_Audit_Report_${returnPeriod}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
 };

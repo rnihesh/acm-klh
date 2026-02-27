@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import { StatCardSkeleton } from "@/components/Skeleton";
 import {
   getDashboardStats,
   getMismatchSummary,
   getTopRiskyVendors,
+  downloadPDF,
 } from "@/lib/api";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatCurrency, formatNumber, severityColor } from "@/lib/utils";
 import {
   AlertTriangle,
   TrendingUp,
@@ -16,6 +18,10 @@ import {
   FileText,
   IndianRupee,
   ShieldAlert,
+  Download,
+  Play,
+  Network,
+  Loader2,
 } from "lucide-react";
 import {
   BarChart,
@@ -61,6 +67,12 @@ interface RiskyVendor {
 }
 
 const CHART_COLORS = ["#d97757", "#d9534f", "#5bc0de", "#5cb85c", "#f0ad4e", "#9b8ec3"];
+const SEVERITY_COLORS: Record<string, string> = {
+  CRITICAL: "#d9534f",
+  HIGH: "#f0ad4e",
+  MEDIUM: "#d97757",
+  LOW: "#5cb85c",
+};
 
 const MISMATCH_SHORT: Record<string, string> = {
   MISSING_IN_GSTR2B: "Missing 2B",
@@ -78,8 +90,11 @@ export default function Dashboard() {
   const [mismatchData, setMismatchData] = useState<MismatchItem[]>([]);
   const [riskyVendors, setRiskyVendors] = useState<RiskyVendor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     Promise.allSettled([
       getDashboardStats(),
       getMismatchSummary(),
@@ -99,6 +114,23 @@ export default function Dashboard() {
     });
   }, []);
 
+  const handlePdfDownload = async () => {
+    setPdfLoading(true);
+    try {
+      await downloadPDF("012026");
+    } catch {
+      // PDF may not be available if reconciliation hasn't been run
+    }
+    setPdfLoading(false);
+  };
+
+  const severityData = stats?.severity_breakdown
+    ? Object.entries(stats.severity_breakdown).map(([name, value]) => ({
+        name,
+        value,
+      }))
+    : [];
+
   return (
     <PageShell title="Dashboard" description="GST Reconciliation Overview">
       {loading ? (
@@ -109,20 +141,62 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-8">
-            <StatCard icon={Building2} label="Taxpayers" value={formatNumber(stats?.total_taxpayers ?? 0)} color="#d97757" desc="Total registered taxpayers" />
-            <StatCard icon={FileText} label="Invoices" value={formatNumber(stats?.total_invoices ?? 0)} color="#5cb85c" desc="Total invoices processed" />
-            <StatCard icon={TrendingUp} label="Txn Value" value={formatCurrency(stats?.total_transaction_value ?? 0)} color="#5bc0de" desc="Total transaction value" />
-            <StatCard icon={AlertTriangle} label="Mismatches" value={formatNumber(stats?.total_mismatches ?? 0)} color="#d9534f" desc="Total mismatches detected" />
-            <StatCard icon={IndianRupee} label="ITC at Risk" value={formatCurrency(stats?.total_itc_at_risk ?? 0)} color="#f0ad4e" desc="Input Tax Credit at risk" />
-            <StatCard icon={ShieldAlert} label="High Risk" value={formatNumber(stats?.high_risk_vendors ?? 0)} color="#9b8ec3" desc="High risk vendor count" />
+          {/* Stat Cards with staggered fade-in */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
+            {[
+              { icon: Building2, label: "Taxpayers", value: formatNumber(stats?.total_taxpayers ?? 0), color: "#d97757", desc: "Total registered taxpayers" },
+              { icon: FileText, label: "Invoices", value: formatNumber(stats?.total_invoices ?? 0), color: "#5cb85c", desc: "Total invoices processed" },
+              { icon: TrendingUp, label: "Txn Value", value: formatCurrency(stats?.total_transaction_value ?? 0), color: "#5bc0de", desc: "Total transaction value" },
+              { icon: AlertTriangle, label: "Mismatches", value: formatNumber(stats?.total_mismatches ?? 0), color: "#d9534f", desc: "Total mismatches detected" },
+              { icon: IndianRupee, label: "ITC at Risk", value: formatCurrency(stats?.total_itc_at_risk ?? 0), color: "#f0ad4e", desc: "Input Tax Credit at risk" },
+              { icon: ShieldAlert, label: "High Risk", value: formatNumber(stats?.high_risk_vendors ?? 0), color: "#9b8ec3", desc: "High risk vendor count" },
+            ].map((card, i) => (
+              <div
+                key={card.label}
+                className="transition-all duration-500"
+                style={{
+                  opacity: mounted ? 1 : 0,
+                  transform: mounted ? "translateY(0)" : "translateY(12px)",
+                  transitionDelay: `${i * 80}ms`,
+                }}
+              >
+                <StatCard {...card} />
+              </div>
+            ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Link
+              href="/reconcile"
+              className="flex items-center gap-2 px-4 py-2 c-bg-accent text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: "var(--accent)" }}
+            >
+              <Play className="w-3.5 h-3.5" /> Run Reconciliation
+            </Link>
+            <button
+              onClick={handlePdfDownload}
+              disabled={pdfLoading || (stats?.total_mismatches ?? 0) === 0}
+              className="flex items-center gap-2 px-4 py-2 c-bg-dark hover:c-bg-card rounded-lg text-sm c-text-2 transition-colors disabled:opacity-40 border c-border"
+            >
+              {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              Export PDF
+            </button>
+            <Link
+              href="/graph"
+              className="flex items-center gap-2 px-4 py-2 c-bg-dark hover:c-bg-card rounded-lg text-sm c-text-2 transition-colors border c-border"
+            >
+              <Network className="w-3.5 h-3.5" /> View Graph
+            </Link>
+          </div>
+
+          {/* Charts Row: Mismatch + Severity Donut + ITC Pie */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            {/* Mismatch Distribution Bar Chart */}
             <div className="c-bg-card rounded-xl border c-border p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
               <h2 className="text-sm font-semibold c-text mb-4">Mismatch Distribution</h2>
               {mismatchData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart
                     data={mismatchData.map((d) => ({
                       ...d,
@@ -130,8 +204,8 @@ export default function Dashboard() {
                     }))}
                     margin={{ top: 5, right: 10, bottom: 5, left: -10 }}
                   >
-                    <XAxis dataKey="label" tick={{ fill: "var(--text-tertiary)", fontSize: 11 }} axisLine={{ stroke: "var(--bg-border)" }} tickLine={false} />
-                    <YAxis tick={{ fill: "var(--text-tertiary)", fontSize: 11 }} axisLine={{ stroke: "var(--bg-border)" }} tickLine={false} />
+                    <XAxis dataKey="label" tick={{ fill: "var(--text-tertiary)", fontSize: 10 }} axisLine={{ stroke: "var(--bg-border)" }} tickLine={false} />
+                    <YAxis tick={{ fill: "var(--text-tertiary)", fontSize: 10 }} axisLine={{ stroke: "var(--bg-border)" }} tickLine={false} />
                     <Tooltip contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--bg-border)", borderRadius: "8px", color: "var(--text-primary)", fontSize: 12, boxShadow: "var(--shadow-md)" }} />
                     <Bar dataKey="count" radius={[3, 3, 0, 0]}>
                       {mismatchData.map((_, i) => (
@@ -145,15 +219,54 @@ export default function Dashboard() {
               )}
             </div>
 
+            {/* Severity Distribution Donut */}
+            <div className="c-bg-card rounded-xl border c-border p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
+              <h2 className="text-sm font-semibold c-text mb-4">Severity Distribution</h2>
+              {severityData.length > 0 ? (
+                <div className="flex flex-col items-center">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={severityData}
+                        cx="50%" cy="50%"
+                        innerRadius={45} outerRadius={75}
+                        paddingAngle={4} dataKey="value" stroke="none"
+                      >
+                        {severityData.map((d) => (
+                          <Cell key={d.name} fill={SEVERITY_COLORS[d.name] || "#6b6b6b"} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--bg-border)", borderRadius: "8px", color: "var(--text-primary)", fontSize: 12, boxShadow: "var(--shadow-md)" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-wrap justify-center gap-3 mt-2">
+                    {severityData.map((d) => (
+                      <div key={d.name} className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: SEVERITY_COLORS[d.name] || "#6b6b6b" }} />
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${severityColor(d.name)}`}>
+                          {d.name}: {d.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <EmptyState text="No severity data." />
+              )}
+            </div>
+
+            {/* ITC at Risk Pie */}
             <div className="c-bg-card rounded-xl border c-border p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
               <h2 className="text-sm font-semibold c-text mb-4">ITC at Risk by Type</h2>
               {mismatchData.length > 0 ? (
-                <div className="flex items-center">
-                  <ResponsiveContainer width="50%" height={260}>
+                <div className="flex flex-col items-center">
+                  <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <Pie
                         data={mismatchData.map((d) => ({ name: MISMATCH_SHORT[d.mismatch_type] || d.mismatch_type, value: d.total_amount }))}
-                        cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={3} dataKey="value" stroke="none"
+                        cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" stroke="none"
                       >
                         {mismatchData.map((_, i) => (
                           <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
@@ -162,12 +275,12 @@ export default function Dashboard() {
                       <Tooltip contentStyle={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--bg-border)", borderRadius: "8px", color: "var(--text-primary)", fontSize: 12, boxShadow: "var(--shadow-md)" }} formatter={(value: number) => [formatCurrency(value), "Amount"]} />
                     </PieChart>
                   </ResponsiveContainer>
-                  <div className="flex-1 space-y-2.5 pl-2">
+                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2">
                     {mismatchData.map((d, i) => (
-                      <div key={d.mismatch_type} className="flex items-center gap-2">
+                      <div key={d.mismatch_type} className="flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                        <span className="text-xs c-text-3 truncate flex-1">{MISMATCH_SHORT[d.mismatch_type] || d.mismatch_type}</span>
-                        <span className="text-xs c-text-2 font-mono">{formatCurrency(d.total_amount)}</span>
+                        <span className="text-[10px] c-text-3">{MISMATCH_SHORT[d.mismatch_type] || d.mismatch_type}</span>
+                        <span className="text-[10px] c-text-2 font-mono">{formatCurrency(d.total_amount)}</span>
                       </div>
                     ))}
                   </div>
@@ -178,6 +291,7 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Top Risky Vendors */}
           <div className="c-bg-card rounded-xl border c-border p-5" style={{ boxShadow: "var(--shadow-sm)" }}>
             <h2 className="text-sm font-semibold c-text mb-4">Top Risky Vendors</h2>
             {riskyVendors.length > 0 ? (

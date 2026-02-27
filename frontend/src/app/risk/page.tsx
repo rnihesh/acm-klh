@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import PageShell from "@/components/PageShell";
 import { CardSkeleton } from "@/components/Skeleton";
 import { getVendorRisks, getVendorRiskSummary } from "@/lib/api";
 import { riskColor } from "@/lib/utils";
-import { Bot, X, ShieldAlert, Search } from "lucide-react";
+import { Bot, X, ShieldAlert } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import SearchableDropdown, { DropdownOption } from "@/components/SearchableDropdown";
 
 interface VendorRisk {
   gstin: string;
@@ -33,7 +34,7 @@ export default function RiskPage() {
   const [loading, setLoading] = useState(true);
   const [aiPanel, setAiPanel] = useState<AISummary | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [selectedVendor, setSelectedVendor] = useState("");
   const [filterLevel, setFilterLevel] = useState("");
 
   useEffect(() => {
@@ -50,17 +51,19 @@ export default function RiskPage() {
   useEffect(() => {
     let f = vendors;
     if (filterLevel) f = f.filter((v) => v.risk_level === filterLevel);
-    if (search) {
-      const q = search.toLowerCase();
-      f = f.filter(
-        (v) =>
-          v.gstin.toLowerCase().includes(q) ||
-          (v.legal_name || "").toLowerCase().includes(q) ||
-          (v.trade_name || "").toLowerCase().includes(q)
-      );
+    if (selectedVendor) {
+      f = f.filter((v) => v.gstin === selectedVendor);
     }
     setFiltered(f);
-  }, [vendors, filterLevel, search]);
+  }, [vendors, filterLevel, selectedVendor]);
+
+  const vendorOptions: DropdownOption[] = useMemo(() => {
+    return vendors.map((v) => ({
+      value: v.gstin,
+      label: v.legal_name || v.trade_name || v.gstin,
+      sublabel: v.gstin,
+    }));
+  }, [vendors]);
 
   const loadAISummary = async (gstin: string) => {
     setAiLoading(true);
@@ -111,14 +114,12 @@ export default function RiskPage() {
                 {level}: {riskCounts[level]}
               </button>
             ))}
-            <div className="relative sm:ml-auto w-full sm:w-56">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 c-text-3" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+            <div className="sm:ml-auto w-full sm:w-64">
+              <SearchableDropdown
+                options={vendorOptions}
+                value={selectedVendor}
+                onChange={setSelectedVendor}
                 placeholder="Search vendor..."
-                className="rounded-lg pl-10 pr-3 py-2 text-sm w-full outline-none"
               />
             </div>
           </div>

@@ -325,3 +325,81 @@ def find_circular_trades():
             }
             for r in result
         ]
+
+
+def get_taxpayer_network(gstin: str):
+    """Get the subgraph centered on a specific taxpayer.
+    Returns the taxpayer, their connected invoices, and connected trading partners.
+    """
+    driver = get_driver()
+    with driver.session() as session:
+        node_ids = set()
+        nodes = []
+        links = []
+
+        # Get the central taxpayer + all directly connected nodes (depth 1-2)
+        result = session.run(
+            """
+            MATCH (center:Taxpayer {gstin: $gstin})
+            OPTIONAL MATCH (center)<-[r1]-(connected)
+            OPTIONAL MATCH (center)-[r2]->(connected2)
+            WITH center,
+                 collect(DISTINCT {node: connected, rel: r1, dir: 'in'}) AS inbound,
+                 collect(DISTINCT {node: connected2, rel: r2, dir: 'out'}) AS outbound
+            RETURN center, inbound, outbound
+            """,
+            gstin=gstin,
+        )
+
+        for r in result:
+            center = r["center"]
+            center_id = center.element_id
+            center_raw = {"id": center_id, "labels": list(center.labels), "properties": dict(center)}
+            if center_id not in node_ids:
+                node_ids.add(center_id)
+                node_data = _transform_node(center_raw)
+                node_data["isCenter"] = True
+                nodes.append(node_data)
+
+            for item in r["inbound"]:
+                n = item["node"]
+                rel = item["rel"]
+                if n is None or rel is None:
+                    continue
+                nid = n.element_id
+                if nid not in node_ids:
+                    node_ids.add(nid)
+                    raw = {"id": nid, "labels": list(n.labels), "properties": dict(n)}
+                    nodes.append(_transform_node(raw))
+                links.append({"source": nid, "target": center_id, "type": rel.type})
+
+            for item in r["outbound"]:
+                n = item["node"]
+                rel = item["rel"]
+                if n is None or rel is None:
+                    continue
+                nid = n.element_id
+                if nid not in node_ids:
+                    node_ids.add(nid)
+                    raw = {"id": nid, "labels": list(n.labels), "properties": dict(n)}
+                    nodes.append(_transform_node(raw))
+                links.append({"source": center_id, "target": nid, "type": rel.type})
+
+        # Get edges between the connected nodes (not just to center)
+        if len(node_ids) > 1:
+            edge_result = session.run(
+                """
+                MATCH (n)-[r]->(m)
+                WHERE elementId(n) IN $ids AND elementId(m) IN $ids
+                RETURN elementId(n) AS source, elementId(m) AS target, type(r) AS type
+                """,
+                ids=list(node_ids),
+            )
+            seen_edges = set((l["source"], l["target"], l["type"]) for l in links)
+            for er in edge_result:
+                key = (er["source"], er["target"], er["type"])
+                if key not in seen_edges:
+                    links.append({"source": er["source"], "target": er["target"], "type": er["type"]})
+                    seen_edges.add(key)
+
+        return {"nodes": nodes, "links": links}
