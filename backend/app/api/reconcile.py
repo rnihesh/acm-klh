@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Query, HTTPException, Body
 from app.core.reconciler import reconcile_all, reconcile_purchase_register
 from app.core.graph_db import get_graph_data, search_graph, find_circular_trades, get_taxpayer_network
@@ -7,27 +8,65 @@ from typing import Optional
 router = APIRouter()
 
 # In-memory store for reconciliation results (for hackathon; use DB in production)
-_results_store: dict[str, list[dict]] = {}
+# Structure: { return_period: { "results": [...], "timestamp": str, "total": int, "breakdown": {...} } }
+_results_store: dict[str, dict] = {}
 
 
 class ReconcileRequest(BaseModel):
     return_period: str = "012026"
+    force: bool = False
 
 
 @router.post("")
 async def trigger_reconciliation(body: Optional[ReconcileRequest] = None, return_period: str = Query(None)):
     return_period = return_period or (body.return_period if body else "012026")
+    force = body.force if body else False
+
+    # Return cached results if available and not forced
+    if not force and return_period in _results_store:
+        cached = _results_store[return_period]
+        return {
+            "status": "cached",
+            "return_period": return_period,
+            "total_mismatches": cached["total"],
+            "breakdown": cached["breakdown"],
+            "last_run": cached["timestamp"],
+        }
+
     try:
         mismatches = reconcile_all(return_period)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Reconciliation failed: {str(e)}")
-    _results_store[return_period] = mismatches
+
+    timestamp = datetime.now().isoformat()
+    breakdown = _breakdown(mismatches)
+    _results_store[return_period] = {
+        "results": mismatches,
+        "timestamp": timestamp,
+        "total": len(mismatches),
+        "breakdown": breakdown,
+    }
     return {
         "status": "completed",
         "return_period": return_period,
         "total_mismatches": len(mismatches),
-        "breakdown": _breakdown(mismatches),
+        "breakdown": breakdown,
+        "last_run": timestamp,
     }
+
+
+@router.get("/status")
+async def get_reconciliation_status(return_period: str = "012026"):
+    """Lightweight check: are there cached results for this period?"""
+    if return_period in _results_store:
+        cached = _results_store[return_period]
+        return {
+            "has_results": True,
+            "return_period": return_period,
+            "total_mismatches": cached["total"],
+            "last_run": cached["timestamp"],
+        }
+    return {"has_results": False, "return_period": return_period}
 
 
 @router.get("/results")
@@ -38,9 +77,10 @@ async def get_results(
     supplier_gstin: str | None = None,
     buyer_gstin: str | None = None,
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=200),
+    page_size: int = Query(50, ge=1, le=500),
 ):
-    results = _results_store.get(return_period, [])
+    cached = _results_store.get(return_period)
+    results = cached["results"] if cached else []
 
     if mismatch_type:
         results = [r for r in results if r["mismatch_type"] == mismatch_type]
@@ -60,13 +100,14 @@ async def get_results(
         "page": page,
         "page_size": page_size,
         "results": results[start:end],
+        "last_run": cached["timestamp"] if cached else None,
     }
 
 
 @router.get("/results/{mismatch_id}")
 async def get_single_result(mismatch_id: str):
-    for period_results in _results_store.values():
-        for r in period_results:
+    for cached in _results_store.values():
+        for r in cached.get("results", []):
             if r["id"] == mismatch_id:
                 return r
     raise HTTPException(status_code=404, detail=f"Mismatch {mismatch_id} not found")
@@ -127,7 +168,12 @@ async def reconcile_pr(
 
     # Store results under a special key
     store_key = f"PR_{gstin}_{return_period}"
-    _results_store[store_key] = mismatches
+    _results_store[store_key] = {
+        "results": mismatches,
+        "timestamp": datetime.now().isoformat(),
+        "total": len(mismatches),
+        "breakdown": _breakdown(mismatches),
+    }
     return {
         "status": "completed",
         "gstin": gstin,

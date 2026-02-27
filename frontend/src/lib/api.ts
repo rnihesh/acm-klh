@@ -64,10 +64,10 @@ export const getTopRiskyVendors = () =>
   fetchAPI("/api/stats/top-risky-vendors");
 
 // Reconciliation
-export const triggerReconciliation = (returnPeriod = "012026") =>
+export const triggerReconciliation = (returnPeriod = "012026", force = false) =>
   fetchAPI("/api/reconcile", {
     method: "POST",
-    body: JSON.stringify({ return_period: returnPeriod }),
+    body: JSON.stringify({ return_period: returnPeriod, force }),
   });
 export const getReconciliationResults = (
   returnPeriod = "012026",

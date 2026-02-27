@@ -3,6 +3,7 @@ Chat API — RAG-powered GST assistant that uses the logged-in user's
 GSTIN to pull contextual data from Neo4j before querying the LLM.
 """
 
+import re
 import uuid
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -10,12 +11,47 @@ from typing import Optional
 
 from app.core.auth import get_current_user
 from app.core.llm_chain import generate_text
-from app.core.chat_context import build_user_context, get_smart_suggestions
+from app.core.chat_context import build_user_context, build_hybrid_context, get_smart_suggestions
 
 router = APIRouter()
 
 # In-memory conversation store (hackathon scope)
 _conversations: dict[str, list[dict]] = {}
+
+# GST-specific keywords for prompt classification
+_GST_KEYWORDS = re.compile(
+    r'\b(gst|gstin|gstr|itc|invoice|tax|hsn|sac|reconcil|mismatch|vendor|supplier|buyer|'
+    r'filing|return|credit|debit|cgst|sgst|igst|cess|turnover|compliance|audit|risk|circular|'
+    r'e-way|eway|input|output|inward|outward|period|assessment|notice|penalty|refund|'
+    r'fraudulent|duplicate|excess|missing|rate|value|amount|claim)\b',
+    re.IGNORECASE
+)
+
+
+def _classify_prompt(message: str) -> str:
+    """Classify prompt complexity to determine response length."""
+    words = message.split()
+    word_count = len(words)
+    gst_matches = len(_GST_KEYWORDS.findall(message))
+
+    # Greetings and very short messages
+    if word_count <= 5 and gst_matches == 0:
+        return "brief"
+    # Medium: short GST questions or moderate length
+    if word_count <= 25 or (word_count <= 15 and gst_matches <= 2):
+        return "concise"
+    # Complex: long questions, analysis requests, multiple GST terms
+    return "detailed"
+
+
+def _get_length_instruction(complexity: str) -> str:
+    """Return appropriate response length instruction."""
+    if complexity == "brief":
+        return "Reply in 1-3 sentences. Be friendly, brief, and natural. Do NOT over-explain."
+    elif complexity == "concise":
+        return "Reply in 50-150 words. Be concise and focused. Use bullet points for clarity."
+    else:
+        return "Reply in 200-400 words. Be thorough with specific data references, use headers and bullet points."
 
 
 CHAT_SYSTEM_PROMPT = """You are an expert GST (Goods & Services Tax) assistant for the Indian taxation system.
@@ -34,7 +70,7 @@ IMPORTANT GUIDELINES:
 - When recommending actions, be specific and actionable
 - Format responses using Markdown (headers, bullet points, bold for emphasis)
 - If the data doesn't contain relevant info, explain what general GST best practice suggests
-- Keep responses concise but thorough (200-400 words)
+- {length_instruction}
 - Use ₹ symbol for Indian Rupee amounts"""
 
 
@@ -60,11 +96,18 @@ async def send_message(
     if conv_id not in _conversations:
         _conversations[conv_id] = []
 
-    # Build user context from Neo4j + in-memory stores
-    context = build_user_context(gstin)
+    # Build user context from Neo4j + embeddings (hybrid RAG)
+    try:
+        context = await build_hybrid_context(gstin, body.message)
+    except Exception:
+        context = build_user_context(gstin)
 
-    # Build system prompt with context
-    system_prompt = CHAT_SYSTEM_PROMPT.format(context=context)
+    # Classify prompt complexity for dynamic response length
+    complexity = _classify_prompt(body.message)
+    length_instruction = _get_length_instruction(complexity)
+
+    # Build system prompt with context and dynamic length
+    system_prompt = CHAT_SYSTEM_PROMPT.format(context=context, length_instruction=length_instruction)
 
     # Build conversation-aware prompt
     history = _conversations[conv_id]

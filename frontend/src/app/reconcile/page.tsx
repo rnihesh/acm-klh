@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import PageShell from "@/components/PageShell";
 import { TableSkeleton } from "@/components/Skeleton";
 import {
@@ -22,6 +22,9 @@ import {
   ArrowUpDown,
   AlertTriangle,
   IndianRupee,
+  RefreshCw,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import SearchableDropdown, { DropdownOption } from "@/components/SearchableDropdown";
@@ -45,6 +48,7 @@ interface ReconcileStatus {
   status: string;
   total_mismatches: number;
   breakdown: Record<string, number>;
+  last_run?: string;
 }
 
 type SortKey = "mismatch_type" | "severity" | "amount_difference" | "invoice_number" | "supplier_gstin";
@@ -69,13 +73,42 @@ export default function ReconcilePage() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey | "">("");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [isCached, setIsCached] = useState(false);
+  const [lastRun, setLastRun] = useState<string | null>(null);
+  const autoLoaded = useRef(false);
   const PAGE_SIZE = 50;
 
-  const runReconciliation = async () => {
+  // Auto-load on mount — uses cache if available
+  useEffect(() => {
+    if (autoLoaded.current) return;
+    autoLoaded.current = true;
+    autoLoadReconciliation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const autoLoadReconciliation = async () => {
     setRunning(true);
     try {
+      // This will return cached results if available (force=false by default)
       const res = (await triggerReconciliation(period)) as ReconcileStatus;
       setStatus(res);
+      setIsCached(res.status === "cached");
+      setLastRun(res.last_run || null);
+      await fetchResults(1);
+    } catch {
+      // If reconciliation fails (no data), just show empty state
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const runReconciliation = async (force = false) => {
+    setRunning(true);
+    try {
+      const res = (await triggerReconciliation(period, force)) as ReconcileStatus;
+      setStatus(res);
+      setIsCached(res.status === "cached");
+      setLastRun(res.last_run || null);
       await fetchResults(1);
     } finally {
       setRunning(false);
@@ -231,13 +264,13 @@ export default function ReconcilePage() {
           className="rounded-lg px-3 py-2 text-sm w-44 outline-none"
         />
         <button
-          onClick={runReconciliation}
+          onClick={() => runReconciliation(true)}
           disabled={running}
           className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
           style={{ backgroundColor: "var(--accent)", color: "var(--accent-text)" }}
         >
-          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-          {running ? "Running..." : "Run Reconciliation"}
+          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          {running ? "Running..." : "Re-run Reconciliation"}
         </button>
 
         {status && (
@@ -245,6 +278,20 @@ export default function ReconcilePage() {
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
               <span className="text-sm text-emerald-400">{status.total_mismatches} mismatches found</span>
             </div>
+            {isCached && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-xs text-blue-400">Cached</span>
+              </div>
+            )}
+            {lastRun && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 c-bg-dark rounded-lg border c-border">
+                <Clock className="w-3 h-3 c-text-3" />
+                <span className="text-[11px] c-text-3">
+                  {new Date(lastRun).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
             <button
               onClick={handlePdfDownload}
               disabled={pdfLoading}

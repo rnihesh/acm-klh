@@ -1,12 +1,14 @@
 """
 Context builder for RAG chatbot — gathers user-specific data from Neo4j
-and formats it as context for the LLM prompt.
+and formats it as context for the LLM prompt. Optionally enriches with
+nomic-embed vector similarity search for hybrid RAG.
 """
 
 from app.core.graph_db import get_driver, find_circular_trades
 from app.api.reconcile import _results_store
 from app.api.audit import _audit_store
 from app.core.risk_model import calculate_all_vendor_risks
+from app.core.embeddings import index_documents, search_similar, is_available as embed_available
 
 
 def build_user_context(gstin: str) -> str:
@@ -99,8 +101,8 @@ def build_user_context(gstin: str) -> str:
 
     # 5. Reconciliation mismatches (from in-memory store)
     all_mismatches = []
-    for period_results in _results_store.values():
-        for m in period_results:
+    for cached in _results_store.values():
+        for m in cached.get("results", []):
             if m.get("supplier_gstin") == gstin or m.get("buyer_gstin") == gstin:
                 all_mismatches.append(m)
 
@@ -200,8 +202,8 @@ def get_smart_suggestions(gstin: str) -> list[str]:
 
     # Check mismatches
     user_mismatches = []
-    for period_results in _results_store.values():
-        for m in period_results:
+    for cached in _results_store.values():
+        for m in cached.get("results", []):
             if m.get("supplier_gstin") == gstin or m.get("buyer_gstin") == gstin:
                 user_mismatches.append(m)
 
@@ -226,3 +228,57 @@ def get_smart_suggestions(gstin: str) -> list[str]:
         suggestions.append("How can I improve my GST filing compliance?")
 
     return suggestions[:5]
+
+
+async def build_hybrid_context(gstin: str, query: str) -> str:
+    """
+    Build context using both graph RAG (Neo4j) and vector similarity
+    search (nomic-embed-text). Falls back to pure graph RAG if embeddings
+    are unavailable.
+    """
+    # Always get graph context
+    graph_context = build_user_context(gstin)
+
+    # Try to index current data for vector search
+    try:
+        docs_to_index: list[dict] = []
+
+        # Index mismatches
+        for cached in _results_store.values():
+            for m in cached.get("results", []):
+                if m.get("supplier_gstin") == gstin or m.get("buyer_gstin") == gstin:
+                    text = (
+                        f"Mismatch: {m.get('mismatch_type')} | Severity: {m.get('severity')} | "
+                        f"Invoice: {m.get('invoice_number')} | Supplier: {m.get('supplier_gstin')} | "
+                        f"Buyer: {m.get('buyer_gstin')} | Difference: ₹{m.get('amount_difference', 0):,.2f} | "
+                        f"Description: {m.get('description', '')}"
+                    )
+                    docs_to_index.append({"text": text, "metadata": {"type": "mismatch", "id": m.get("id")}})
+
+        # Index audit trails
+        for audit in _audit_store:
+            if gstin in str(audit):
+                text = f"Audit: {audit.get('explanation', '')[:500]}"
+                docs_to_index.append({"text": text, "metadata": {"type": "audit"}})
+
+        if docs_to_index:
+            await index_documents(docs_to_index)
+    except Exception:
+        pass
+
+    # Search for relevant context via embeddings
+    embedding_context = ""
+    try:
+        if embed_available():
+            results = await search_similar(query, top_k=3)
+            if results:
+                relevant_texts = [f"  - {r['text']}" for r in results if r['score'] > 0.3]
+                if relevant_texts:
+                    embedding_context = (
+                        "\n\n## Semantically Relevant Data (via vector search)\n"
+                        + "\n".join(relevant_texts)
+                    )
+    except Exception:
+        pass
+
+    return graph_context + embedding_context
