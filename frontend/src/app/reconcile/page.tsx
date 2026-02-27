@@ -216,12 +216,15 @@ export default function ReconcilePage() {
     setAuditLoading(null);
   };
 
+  const [pdfError, setPdfError] = useState("");
+
   const handlePdfDownload = async () => {
     setPdfLoading(true);
+    setPdfError("");
     try {
       await downloadPDF(period);
     } catch {
-      // pass
+      setPdfError("PDF generation failed. Run reconciliation first.");
     }
     setPdfLoading(false);
   };
@@ -300,6 +303,9 @@ export default function ReconcilePage() {
               {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
               Export PDF
             </button>
+            {pdfError && (
+              <span className="text-xs text-red-400">{pdfError}</span>
+            )}
           </>
         )}
       </div>

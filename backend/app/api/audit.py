@@ -71,7 +71,8 @@ async def download_pdf_report(return_period: str = "012026"):
     from app.api.reconcile import _results_store
     from app.core.risk_model import calculate_all_vendor_risks
 
-    mismatches = _results_store.get(return_period, [])
+    stored = _results_store.get(return_period, {})
+    mismatches = stored.get("results", []) if isinstance(stored, dict) else stored
     if not mismatches:
         raise HTTPException(
             status_code=404,
@@ -83,12 +84,15 @@ async def download_pdf_report(return_period: str = "012026"):
     except Exception:
         vendors = []
 
-    pdf_bytes = generate_reconciliation_report(
-        return_period=return_period,
-        mismatches=mismatches,
-        audit_trails=_audit_store,
-        risky_vendors=vendors,
-    )
+    try:
+        pdf_bytes = generate_reconciliation_report(
+            return_period=return_period,
+            mismatches=mismatches,
+            audit_trails=_audit_store,
+            risky_vendors=vendors,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {e}")
 
     return Response(
         content=pdf_bytes,
@@ -103,7 +107,8 @@ async def view_html_report(return_period: str = "012026"):
     from app.api.reconcile import _results_store
     from app.core.risk_model import calculate_all_vendor_risks
 
-    mismatches = _results_store.get(return_period, [])
+    stored = _results_store.get(return_period, {})
+    mismatches = stored.get("results", []) if isinstance(stored, dict) else stored
     if not mismatches:
         raise HTTPException(
             status_code=404,

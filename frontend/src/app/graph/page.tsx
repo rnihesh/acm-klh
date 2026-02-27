@@ -25,6 +25,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import SearchableDropdown, { DropdownOption } from "@/components/SearchableDropdown";
+import { useTheme } from "@/hooks/useTheme";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
@@ -58,7 +59,7 @@ interface CircularTrade {
 }
 
 /* ── Color Palette ── */
-const NODE_COLORS: Record<string, string> = {
+const NODE_COLORS_DARK: Record<string, string> = {
   Taxpayer: "#ffffff",
   Invoice: "#888888",
   GSTR1Return: "#c0c0c0",
@@ -70,17 +71,20 @@ const NODE_COLORS: Record<string, string> = {
   PurchaseRegisterEntry: "#909090",
 };
 
-const NODE_COLORS_DIM: Record<string, string> = {
-  Taxpayer: "#ffffff30",
-  Invoice: "#88888830",
-  GSTR1Return: "#c0c0c030",
-  GSTR2BReturn: "#a0a0a030",
-  GSTR3BReturn: "#70707030",
-  User: "#50505030",
-  EInvoice: "#d4d4d430",
-  EWayBill: "#b0b0b030",
-  PurchaseRegisterEntry: "#90909030",
+const NODE_COLORS_LIGHT: Record<string, string> = {
+  Taxpayer: "#1a1a1a",
+  Invoice: "#555555",
+  GSTR1Return: "#333333",
+  GSTR2BReturn: "#444444",
+  GSTR3BReturn: "#666666",
+  User: "#777777",
+  EInvoice: "#2a2a2a",
+  EWayBill: "#3a3a3a",
+  PurchaseRegisterEntry: "#4a4a4a",
 };
+
+// Default export for static references (legend chips, detail panel dots)
+const NODE_COLORS = NODE_COLORS_DARK;
 
 const NODE_SIZES: Record<string, number> = {
   Taxpayer: 14,
@@ -127,6 +131,11 @@ const nodeId = (ref: string | GraphNode) =>
 
 /* ────────────────────── Component ────────────────────── */
 export default function GraphPage() {
+  const { isDark } = useTheme();
+
+  /* Theme-aware color maps */
+  const nodeColors = isDark ? NODE_COLORS_DARK : NODE_COLORS_LIGHT;
+
   /* State */
   const [graphData, setGraphData] = useState<{
     nodes: GraphNode[];
@@ -433,7 +442,7 @@ export default function GraphPage() {
       if (n.x == null || n.y == null) return;
 
       const baseSize = (n.isCenter ? 16 : NODE_SIZES[n.type]) || 6;
-      const color = NODE_COLORS[n.type] || "#6B7280";
+      const color = nodeColors[n.type] || "#6B7280";
       const isHovered = hoveredNode?.id === n.id;
       const isSelected = selectedNode?.id === n.id;
       const isCircularHighlighted = circularHighlight.has(String(n.gstin || n.id));
@@ -487,7 +496,7 @@ export default function GraphPage() {
       if (isSelected) {
         ctx.beginPath();
         ctx.arc(n.x, n.y, baseSize + 2, 0, 2 * Math.PI);
-        ctx.strokeStyle = "#ffffff";
+        ctx.strokeStyle = isDark ? "#ffffff" : "#000000";
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -502,7 +511,7 @@ export default function GraphPage() {
       if (baseSize >= 8) {
         ctx.beginPath();
         ctx.arc(n.x - baseSize * 0.2, n.y - baseSize * 0.25, baseSize * 0.3, 0, 2 * Math.PI);
-        ctx.fillStyle = "rgba(255,255,255,0.2)";
+        ctx.fillStyle = isDark ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.3)";
         ctx.fill();
       }
 
@@ -528,7 +537,7 @@ export default function GraphPage() {
         // Background for label
         const metrics = ctx.measureText(label);
         const padding = 2 / globalScale;
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillStyle = isDark ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.85)";
         ctx.fillRect(
           n.x - metrics.width / 2 - padding,
           n.y + baseSize + 1.5,
@@ -536,13 +545,15 @@ export default function GraphPage() {
           fontSize + padding
         );
 
-        ctx.fillStyle = isHovered || isSelected || n.isCenter ? "#ffffff" : "rgba(220,220,220,0.9)";
+        ctx.fillStyle = isDark
+          ? (isHovered || isSelected || n.isCenter ? "#ffffff" : "rgba(220,220,220,0.9)")
+          : (isHovered || isSelected || n.isCenter ? "#000000" : "rgba(40,40,40,0.9)");
         ctx.fillText(label, n.x, n.y + baseSize + 2);
       }
 
       ctx.globalAlpha = 1;
     },
-    [hoveredNode, selectedNode, graphData.links, circularHighlight, showCircular]
+    [hoveredNode, selectedNode, graphData.links, circularHighlight, showCircular, isDark, nodeColors]
   );
 
   const paintPointerArea = useCallback(
@@ -583,10 +594,10 @@ export default function GraphPage() {
       ctx.strokeStyle = isCircularLink
         ? "rgba(239, 68, 68, 0.6)"
         : isHighlighted
-          ? "rgba(255, 255, 255, 0.5)"
+          ? (isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)")
           : dimmed
-            ? "rgba(100, 100, 100, 0.03)"
-            : "rgba(120, 120, 120, 0.12)";
+            ? (isDark ? "rgba(100, 100, 100, 0.03)" : "rgba(100, 100, 100, 0.06)")
+            : (isDark ? "rgba(120, 120, 120, 0.12)" : "rgba(80, 80, 80, 0.2)");
       ctx.lineWidth = isCircularLink ? 2.5 : isHighlighted ? 1.8 : 0.5;
       ctx.stroke();
 
@@ -607,8 +618,8 @@ export default function GraphPage() {
         ctx.fillStyle = isCircularLink
           ? "rgba(239, 68, 68, 0.6)"
           : isHighlighted
-            ? "rgba(255, 255, 255, 0.5)"
-            : "rgba(100, 100, 100, 0.2)";
+            ? (isDark ? "rgba(255, 255, 255, 0.5)" : "rgba(0, 0, 0, 0.5)")
+            : (isDark ? "rgba(100, 100, 100, 0.2)" : "rgba(60, 60, 60, 0.3)");
         ctx.fill();
       }
 
@@ -620,11 +631,11 @@ export default function GraphPage() {
         ctx.font = `${fontSize}px Inter, system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.fillStyle = isDark ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.8)";
         ctx.fillText(LINK_LABELS[l.type], mx, my - 3 / globalScale);
       }
     },
-    [hoveredNode, selectedNode, circularHighlight, showCircular]
+    [hoveredNode, selectedNode, circularHighlight, showCircular, isDark]
   );
 
   /* ═══════════ RENDER ═══════════ */
@@ -705,7 +716,7 @@ export default function GraphPage() {
 
         {/* Type filter chips */}
         <div className="flex flex-wrap items-center gap-2">
-          {Object.entries(NODE_COLORS)
+          {Object.entries(nodeColors)
             .filter(([type]) => type !== "User" && (typeCounts[type] || 0) > 0)
             .map(([type, color]) => {
               const active = visibleTypes.has(type);
@@ -915,7 +926,7 @@ export default function GraphPage() {
               <div className="flex items-center gap-2">
                 <div
                   className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: NODE_COLORS[selectedNode.type] || "#6B7280" }}
+                  style={{ backgroundColor: nodeColors[selectedNode.type] || "#6B7280" }}
                 />
                 <span className="text-xs font-semibold c-text">
                   {NODE_LABELS[selectedNode.type] || selectedNode.type}
@@ -981,7 +992,7 @@ export default function GraphPage() {
                       >
                         <div
                           className="w-2 h-2 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: NODE_COLORS[cn.type] || "#6B7280" }}
+                          style={{ backgroundColor: nodeColors[cn.type] || "#6B7280" }}
                         />
                         <span className="text-[11px] c-text-2 truncate flex-1">
                           {cn.label || cn.id}
