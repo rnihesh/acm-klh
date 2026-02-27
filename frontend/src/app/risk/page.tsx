@@ -95,7 +95,7 @@ export default function RiskPage() {
       ) : vendors.length > 0 ? (
         <>
           {/* Risk level summary */}
-          <div className="flex flex-wrap gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
             {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const).map((level) => (
               <button
                 key={level}
@@ -111,14 +111,14 @@ export default function RiskPage() {
                 {level}: {riskCounts[level]}
               </button>
             ))}
-            <div className="relative ml-auto">
+            <div className="relative sm:ml-auto w-full sm:w-56">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 c-text-3" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search vendor..."
-                className="rounded-lg pl-10 pr-3 py-2 text-sm w-56 outline-none"
+                className="rounded-lg pl-10 pr-3 py-2 text-sm w-full outline-none"
               />
             </div>
           </div>

@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     ollama_url: str = "http://165.245.128.29:11434"
     llm_priority: str = "openai,gemini,ollama"
 
+    # JWT Auth
+    jwt_secret: str = "gst-recon-hackathon-secret-2026"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 1440  # 24 hours
+
     # App
     app_name: str = "GST Reconciliation Engine"
     debug: bool = True

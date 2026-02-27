@@ -164,7 +164,7 @@ export default function ReconcilePage() {
 
       {/* Filters */}
       {results.length > 0 && (
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
           <select
             value={filterType}
             onChange={(e) => {
@@ -204,7 +204,8 @@ export default function ReconcilePage() {
       ) : results.length > 0 ? (
         <>
           <div className="c-bg-card rounded-xl border c-border overflow-hidden" style={{ boxShadow: "var(--shadow-sm)" }}>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b c-border c-bg-dark">
                   <th className="text-left px-4 py-3 c-text-2 font-medium w-8" />
@@ -341,6 +342,7 @@ export default function ReconcilePage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* Pagination */}
