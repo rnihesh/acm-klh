@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { getGraphNodes, searchGraph, getCircularTrades } from "@/lib/api";
@@ -55,7 +55,6 @@ export default function GraphPage() {
   const [circularTrades, setCircularTrades] = useState<CircularTrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCircular, setShowCircular] = useState(false);
-  const graphRef = useRef<unknown>(null);
 
   useEffect(() => {
     loadGraph();
@@ -208,7 +207,6 @@ export default function GraphPage() {
               </div>
             ) : graphData.nodes.length > 0 ? (
               <ForceGraph2D
-                ref={graphRef as React.MutableRefObject<null>}
                 graphData={graphData}
                 nodeColor={nodeColor as (node: object) => string}
                 nodeLabel={(node: object) => {

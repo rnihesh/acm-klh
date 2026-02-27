@@ -255,7 +255,7 @@ export default function ReconcilePage() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
-                            onClick={() => generateAuditTrail(r)}
+                            onClick={() => generateAuditTrail(r as unknown as Record<string, unknown>)}
                             className="text-xs text-blue-400 hover:text-blue-300"
                           >
                             Generate Audit
