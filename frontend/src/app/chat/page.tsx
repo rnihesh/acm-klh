@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import PageShell from "@/components/PageShell";
-import { sendChatMessage, getChatSuggestions } from "@/lib/api";
+import { useChatContext } from "@/contexts/ChatContext";
 import {
   Send,
   Loader2,
@@ -18,31 +18,24 @@ import {
 } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
-
 const SUGGESTION_ICONS = [FileText, ShieldAlert, TrendingUp, HelpCircle, Sparkles];
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [conversationId, setConversationId] = useState<string | undefined>();
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const {
+    messages,
+    input,
+    setInput,
+    loading,
+    suggestions,
+    conversationId,
+    sendMsg,
+    startNewChat,
+  } = useChatContext();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    getChatSuggestions()
-      .then((data) => setSuggestions(data.suggestions || []))
-      .catch(() => {});
-  }, []);
+  const showScrollBtn = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,69 +53,14 @@ export default function ChatPage() {
     adjustTextarea();
   }, [input, adjustTextarea]);
 
-  // Scroll detection for "scroll to bottom" button
-  const handleScroll = useCallback(() => {
-    const el = scrollAreaRef.current;
-    if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-    setShowScrollBtn(!atBottom && messages.length > 2);
-  }, [messages.length]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const startNewChat = () => {
-    setMessages([]);
-    setConversationId(undefined);
-    setInput("");
-  };
-
-  const sendMessage = useCallback(
-    async (text: string) => {
-      if (!text.trim() || loading) return;
-
-      const userMsg: Message = {
-        id: `u-${Date.now()}`,
-        role: "user",
-        content: text.trim(),
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setLoading(true);
-
-      try {
-        const res = await sendChatMessage(text.trim(), conversationId);
-        setConversationId(res.conversation_id);
-
-        const aiMsg: Message = {
-          id: `a-${Date.now()}`,
-          role: "assistant",
-          content: res.response,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMsg]);
-      } catch {
-        const errMsg: Message = {
-          id: `e-${Date.now()}`,
-          role: "assistant",
-          content:
-            "Sorry, I encountered an error processing your request. Please try again.",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errMsg]);
-      }
-      setLoading(false);
-      inputRef.current?.focus();
-    },
-    [loading, conversationId]
-  );
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage(input);
+      sendMsg(input);
     }
   };
 
@@ -132,9 +70,8 @@ export default function ChatPage() {
       description="Context-aware GST compliance assistant powered by your Knowledge Graph"
     >
       <div
-        className="flex flex-col c-bg-card rounded-xl border c-border overflow-hidden"
+        className="flex flex-col overflow-hidden"
         style={{
-          boxShadow: "var(--shadow-sm)",
           height: "calc(100vh - 180px)",
           minHeight: "500px",
         }}
@@ -172,7 +109,6 @@ export default function ChatPage() {
         {/* Messages area */}
         <div
           ref={scrollAreaRef}
-          onScroll={handleScroll}
           className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 relative"
         >
           {messages.length === 0 ? (
@@ -204,7 +140,7 @@ export default function ChatPage() {
                     return (
                       <button
                         key={i}
-                        onClick={() => sendMessage(s)}
+                        onClick={() => sendMsg(s)}
                         className="flex items-start gap-3 text-left px-4 py-3.5 rounded-xl text-sm c-text-2 c-bg-dark hover:c-bg-card border c-border hover:c-border-accent transition-all group"
                       >
                         <Icon className="w-4 h-4 c-text-3 group-hover:c-text-accent flex-shrink-0 mt-0.5" />
@@ -308,17 +244,6 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </>
           )}
-
-          {/* Scroll to bottom button */}
-          {showScrollBtn && (
-            <button
-              onClick={scrollToBottom}
-              className="sticky bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full c-bg-dark border c-border shadow-lg hover:c-bg-card transition-all text-xs c-text-2"
-            >
-              <ArrowDown className="w-3 h-3" />
-              Scroll down
-            </button>
-          )}
         </div>
 
         {/* Input area */}
@@ -342,7 +267,7 @@ export default function ChatPage() {
               disabled={loading}
             />
             <button
-              onClick={() => sendMessage(input)}
+              onClick={() => sendMsg(input)}
               disabled={!input.trim() || loading}
               className="flex items-center justify-center w-10 h-10 rounded-xl transition-all disabled:opacity-40"
               style={{
