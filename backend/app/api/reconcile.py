@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Body
 from app.core.reconciler import reconcile_all, reconcile_purchase_register
 from app.core.graph_db import get_graph_data, search_graph, find_circular_trades
+from pydantic import BaseModel
+from typing import Optional
 
 router = APIRouter()
 
@@ -8,8 +10,13 @@ router = APIRouter()
 _results_store: dict[str, list[dict]] = {}
 
 
+class ReconcileRequest(BaseModel):
+    return_period: str = "012026"
+
+
 @router.post("")
-async def trigger_reconciliation(return_period: str = "012026"):
+async def trigger_reconciliation(body: Optional[ReconcileRequest] = None, return_period: str = Query(None)):
+    return_period = return_period or (body.return_period if body else "012026")
     try:
         mismatches = reconcile_all(return_period)
     except Exception as e:

@@ -162,53 +162,146 @@ def ingest_gstr2b_return(tx, gstin: str, return_period: str, generation_date: st
     )
 
 
+def _node_label(labels: list[str], props: dict) -> str:
+    """Pick the best display label for a node."""
+    if "Taxpayer" in labels:
+        return props.get("trade_name") or props.get("legal_name") or props.get("gstin", "")
+    if "Invoice" in labels:
+        return props.get("invoice_number", props.get("invoice_id", ""))
+    if "GSTR1Return" in labels:
+        return f"GSTR1 {props.get('gstin', '')[:8]}..{props.get('return_period', '')}"
+    if "GSTR2BReturn" in labels:
+        return f"GSTR2B {props.get('gstin', '')[:8]}..{props.get('return_period', '')}"
+    if "GSTR3BReturn" in labels:
+        return f"GSTR3B {props.get('gstin', '')[:8]}..{props.get('return_period', '')}"
+    return str(props.get("id", ""))
+
+
+def _transform_node(raw: dict) -> dict:
+    """Transform a raw Neo4j node dict into flat frontend-friendly format."""
+    labels = raw.get("labels", [])
+    props = raw.get("properties", {})
+    node_type = labels[0] if labels else "Unknown"
+    return {
+        "id": raw["id"],
+        "type": node_type,
+        "label": _node_label(labels, props),
+        **props,
+    }
+
+
 def get_graph_data(limit: int = 200):
     driver = get_driver()
     with driver.session() as session:
-        result = session.run(
+        # Collect nodes
+        node_result = session.run(
             """
             MATCH (n)
             WITH n LIMIT $limit
-            OPTIONAL MATCH (n)-[r]->(m)
-            RETURN
-                collect(DISTINCT {
-                    id: elementId(n),
-                    labels: labels(n),
-                    properties: properties(n)
-                }) AS nodes,
-                collect(DISTINCT {
-                    source: elementId(n),
-                    target: elementId(m),
-                    type: type(r),
-                    properties: properties(r)
-                }) AS edges
+            RETURN elementId(n) AS id, labels(n) AS labels, properties(n) AS properties
             """,
             limit=limit,
         )
-        record = result.single()
-        if record:
-            return {
-                "nodes": record["nodes"],
-                "edges": [e for e in record["edges"] if e["target"] is not None],
-            }
-        return {"nodes": [], "edges": []}
+        node_ids = set()
+        nodes = []
+        for r in node_result:
+            raw = {"id": r["id"], "labels": r["labels"], "properties": r["properties"]}
+            node_ids.add(r["id"])
+            nodes.append(_transform_node(raw))
+
+        # Collect edges between those nodes
+        edge_result = session.run(
+            """
+            MATCH (n)-[r]->(m)
+            WHERE elementId(n) IN $ids AND elementId(m) IN $ids
+            RETURN elementId(n) AS source, elementId(m) AS target,
+                   type(r) AS type, properties(r) AS properties
+            """,
+            ids=list(node_ids),
+        )
+        links = []
+        for r in edge_result:
+            links.append({
+                "source": r["source"],
+                "target": r["target"],
+                "type": r["type"],
+            })
+
+        # Also add target nodes that might be outside the original limit
+        missing_ids = set()
+        for link in links:
+            if link["target"] not in node_ids:
+                missing_ids.add(link["target"])
+
+        if missing_ids:
+            extra = session.run(
+                """
+                UNWIND $ids AS nid
+                MATCH (n) WHERE elementId(n) = nid
+                RETURN elementId(n) AS id, labels(n) AS labels, properties(n) AS properties
+                """,
+                ids=list(missing_ids),
+            )
+            for r in extra:
+                raw = {"id": r["id"], "labels": r["labels"], "properties": r["properties"]}
+                nodes.append(_transform_node(raw))
+                node_ids.add(r["id"])
+
+        return {"nodes": nodes, "links": links}
 
 
 def search_graph(query: str):
     driver = get_driver()
     with driver.session() as session:
-        result = session.run(
+        # Find matching nodes
+        node_result = session.run(
             """
             MATCH (n)
-            WHERE n.gstin CONTAINS $query
-               OR n.legal_name CONTAINS $query
-               OR n.invoice_number CONTAINS $query
-            RETURN n, labels(n) AS labels, properties(n) AS props
+            WHERE n.gstin CONTAINS $q
+               OR n.legal_name CONTAINS $q
+               OR n.invoice_number CONTAINS $q
+               OR n.trade_name CONTAINS $q
+            RETURN elementId(n) AS id, labels(n) AS labels, properties(n) AS properties
             LIMIT 50
             """,
-            query=query,
+            q=query,
         )
-        return [{"labels": r["labels"], "properties": r["props"]} for r in result]
+        node_ids = set()
+        nodes = []
+        for r in node_result:
+            raw = {"id": r["id"], "labels": r["labels"], "properties": r["properties"]}
+            node_ids.add(r["id"])
+            nodes.append(_transform_node(raw))
+
+        if not node_ids:
+            return {"nodes": [], "links": []}
+
+        # Find relationships between matched nodes + their neighbors
+        edge_result = session.run(
+            """
+            MATCH (n)-[r]->(m)
+            WHERE elementId(n) IN $ids OR elementId(m) IN $ids
+            RETURN elementId(n) AS source, elementId(m) AS target,
+                   type(r) AS type,
+                   elementId(n) AS src_id, elementId(m) AS tgt_id,
+                   labels(n) AS src_labels, properties(n) AS src_props,
+                   labels(m) AS tgt_labels, properties(m) AS tgt_props
+            LIMIT 200
+            """,
+            ids=list(node_ids),
+        )
+        links = []
+        for r in edge_result:
+            links.append({"source": r["source"], "target": r["target"], "type": r["type"]})
+            # Add neighbor nodes if not already present
+            for prefix in ["src", "tgt"]:
+                nid = r[f"{prefix}_id"]
+                if nid not in node_ids:
+                    raw = {"id": nid, "labels": r[f"{prefix}_labels"], "properties": r[f"{prefix}_props"]}
+                    nodes.append(_transform_node(raw))
+                    node_ids.add(nid)
+
+        return {"nodes": nodes, "links": links}
 
 
 def find_circular_trades():
